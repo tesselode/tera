@@ -2,6 +2,25 @@ pico-8 cartridge // http://www.pico-8.com
 version 16
 __lua__
 
+local main_kick_data = {
+	{ -- from spawn state
+		cw = {{0, 0}, {-1, 0}, {-1, 1}, {0, -2}, {-1, -2}},
+		ccw = {{0, 0}, {1, 0}, {1, 1}, {0, -2}, {1, -2}},
+	},
+	{ -- from 1 clockwise rotation from spawn
+		cw = {{0, 0}, {1, 0}, {1, -1}, {0, 2}, {1, 2}},
+		ccw = {{0, 0}, {1, 0}, {1, -1}, {0, 2}, {1, 2}},
+	},
+	{ -- from 2 rotations from spawn
+		cw = {{0, 0}, {1, 0}, {1, 1}, {0, -2}, {1, -2}},
+		ccw = {{0, 0}, {-1, 0}, {-1, 1}, {0, -2}, {-1, -2}},
+	},
+	{ -- from 1 counter-clockwise rotation from spawn
+		cw = {{0, 0}, {-1, 0}, {-1, -1}, {0, 2}, {-1, 2}},
+		ccw = {{0, 0}, {-1, 0}, {-1, -1}, {0, 2}, {-1, 2}},
+	},
+}
+
 local tetrominoes = {
 	i = {
 		blocks = {
@@ -30,6 +49,25 @@ local tetrominoes = {
 				{0, 1, 0, 0},
 			},
 		},
+		-- akira srs kick data
+		kick = {
+			{ -- from spawn state
+				cw = {{0, 0}, {-2, 0}, {1, 0}, {1, 2}, {-2, -1}},
+				ccw = {{0, 0}, {2, 0}, {-1, 0}, {-1, 2}, {2, -1}},
+			},
+			{ -- from 1 clockwise rotation from spawn
+				cw = {{0, 0}, {-1, 0}, {2, 0}, {-1, 2}, {2, -1}},
+				ccw = {{0, 0}, {2, 0}, {-1, 0}, {2, 1}, {-1, -2}},
+			},
+			{ -- from 2 rotations from spawn
+				cw = {{0, 0}, {2, 0}, {-1, 0}, {2, 1}, {-1, -1}},
+				ccw = {{0, 0}, {-2, 0}, {1, 0}, {-2, 1}, {1, -1}},
+			},
+			{ -- from 1 counter-clockwise rotation from spawn
+				cw = {{0, 0}, {-2, 0}, {1, 0}, {-2, 1}, {1, -2}},
+				ccw = {{0, 0}, {1, 0}, {-2, 0}, {1, 2}, {-2, -1}},
+			},
+		},
 	},
 	l = {
 		blocks = {
@@ -54,6 +92,7 @@ local tetrominoes = {
 				{1, 1, 0},
 			},
 		},
+		kick = main_kick_data,
 	},
 	j = {
 		blocks = {
@@ -78,21 +117,10 @@ local tetrominoes = {
 				{0, 1, 0},
 			},
 		},
+		kick = main_kick_data,
 	},
 	o = {
 		blocks = {
-			{
-				{1, 1},
-				{1, 1},
-			},
-			{
-				{1, 1},
-				{1, 1},
-			},
-			{
-				{1, 1},
-				{1, 1},
-			},
 			{
 				{1, 1},
 				{1, 1},
@@ -122,6 +150,7 @@ local tetrominoes = {
 				{0, 1, 0},
 			},
 		},
+		kick = main_kick_data,
 	},
 	z = {
 		blocks = {
@@ -146,6 +175,7 @@ local tetrominoes = {
 				{1, 0, 0},
 			},
 		},
+		kick = main_kick_data,
 	},
 	t = {
 		blocks = {
@@ -170,6 +200,7 @@ local tetrominoes = {
 				{0, 1, 0},
 			},
 		},
+		kick = main_kick_data,
 	}
 }
 
