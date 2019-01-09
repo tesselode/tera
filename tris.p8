@@ -1,7 +1,18 @@
 pico-8 cartridge // http://www.pico-8.com
 version 16
 __lua__
+-- tetromino data --
+--[[
+	this section defines the shape of tetrominos, as well as how they rotate.
+	the "blocks" table for each tetromino defines the shape and
+	relative position of each of the 4 orientations of each tetromino.
+	the "kick" table lists the relative positions that will be tested
+	to see if a tetromino can be rotated clockwise or counterclockwise,
+	given its current position and state of the board.
+	this data follows the super rotation system (srs).
+]]
 
+-- this is the kick data used for j, l, s, t, and z pieces
 local main_kick_data = {
 	{ -- from spawn state
 		cw = {{0, 0}, {-1, 0}, {-1, 1}, {0, -2}, {-1, -2}},
@@ -49,7 +60,12 @@ local tetrominoes = {
 				{0, 1, 0, 0},
 			},
 		},
-		-- akira srs kick data
+		--[[
+			this is the kick data used for i pieces. this particular
+			variation is the kick data used in tgm3 and tgm ace,
+			which makes i piece rotation more symmetrical than in
+			standard srs
+		]]
 		kick = {
 			{ -- from spawn state
 				cw = {{0, 0}, {-2, 0}, {1, 0}, {1, 2}, {-2, -1}},
@@ -126,6 +142,7 @@ local tetrominoes = {
 				{1, 1},
 			},
 		},
+		-- the o piece has no kick data, as it cannot be rotated
 	},
 	s = {
 		blocks = {
