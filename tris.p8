@@ -1,6 +1,8 @@
 pico-8 cartridge // http://www.pico-8.com
 version 16
 __lua__
+-- resources --
+
 -- tetromino data --
 --[[
 	this section defines the shape of tetrominos, as well as how they rotate.
@@ -221,24 +223,35 @@ local tetrominoes = {
 	}
 }
 
+-- constants --
 local board_width = 10
 local board_height = 40
 local visible_board_height = 20
 local block_size = 6
 
-local board = {}
-for x = 1, board_width do
-	board[x] = {}
-	for y = 1, board_height do
-		board[x][y] = 0
+-- organization --
+local state = {}
+
+-->8
+-- gameplay state
+
+state.game = {}
+
+function state.game:init_board()
+	self.board = {}
+	for x = 1, board_width do
+		self.board[x] = {}
+		for y = 1, board_height do
+			self.board[x][y] = 0
+		end
 	end
 end
 
-function _update60()
+function state.game:enter()
+	self:init_board()
 end
 
-function _draw()
-	cls()
+function state.game:draw_board()
 	for x = 1, board_width - 1 do
 		line(x * block_size, 0, x * block_size,
 			visible_board_height * block_size, 1)
@@ -249,4 +262,27 @@ function _draw()
 	end
 	rect(0, 0, board_width * block_size,
 		visible_board_height * block_size, 7)
+end
+
+function state.game:draw()
+	self:draw_board()
+end
+
+-->8
+-- main loop
+
+local current_state = state.game
+current_state:enter()
+
+function _update60()
+	if current_state.update then
+		current_state:update()
+	end
+end
+
+function _draw()
+	cls()
+	if current_state.draw then
+		current_state:draw()
+	end
 end
