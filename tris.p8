@@ -247,14 +247,27 @@ function state.game:init_board()
 	end
 end
 
+function state.game:populate_next_queue()
+	local shapes = {}
+	for shape, _ in pairs(tetrominoes) do
+		add(shapes, shape)
+	end
+	for _ = 1, #shapes do
+		local n = ceil(rnd(#shapes))
+		add(self.next_queue, shapes[n])
+		del(shapes, n)
+	end
+end
+
+function state.game:init_next_queue()
+	self.next_queue = {}
+	self:populate_next_queue()
+end
+
 function state.game:enter()
 	self:init_board()
-	self.current_tetromino = {
-		shape = 's',
-		x = 1,
-		y = 5,
-		orientation = 1,
-	}
+	self:init_next_queue()
+	self:spawn_tetromino()
 end
 
 function state.game:is_block_free(x, y)
@@ -279,6 +292,24 @@ function state.game:can_tetromino_fit(shape, x, y, orientation)
 	return true
 end
 
+function state.game:spawn_tetromino()
+	local shape = self.next_queue[1]
+	del(self.next_queue, shape)
+	if #self.next_queue < 7 then
+		self:populate_next_queue()
+	end
+	self.current_tetromino = {
+		shape = shape,
+		x = 4,
+		y = shape == 'i' and 21 or 22,
+		orientation = 1,
+	}
+	local c = self.current_tetromino
+	if self:can_tetromino_fit(c.shape, c.x, c.y - 1, c.orientation) then
+		c.y = c.y - 1
+	end
+end
+
 function state.game:update()
 	local c = self.current_tetromino
 	if btnp(0) then
@@ -291,6 +322,17 @@ function state.game:update()
 			c.x += 1
 		end
 	end
+	if btnp(2) then
+		self:spawn_tetromino()
+	end
+end
+
+function state.game:draw_block(board_x, board_y)
+	local x1 = (board_x - 1) * block_size
+	local y1 = visible_board_height * block_size - (board_y - 1) * block_size
+	local x2 = x1 + block_size
+	local y2 = y1 + block_size
+	rectfill(x1, y1, x2, y2, 8)
 end
 
 function state.game:draw_board()
@@ -312,11 +354,10 @@ function state.game:draw_current_tetromino()
 	for relative_y = 1, #blocks do
 		local row = blocks[relative_y]
 		for relative_x = 1, #row do
-			local x = c.x + relative_x - 1
-			local y = c.y + relative_y - 1
+			local board_x = c.x + relative_x - 1
+			local board_y = c.y + relative_y - 1
 			if row[relative_x] == 1 then
-				rectfill((x - 1) * block_size, (y - 1) * block_size,
-					x * block_size, y * block_size, 8)
+				self:draw_block(board_x, board_y)
 			end
 		end
 	end
