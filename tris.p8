@@ -86,7 +86,7 @@ local tetrominoes = {
 				ccw = {{0, 0}, {1, 0}, {-2, 0}, {1, 2}, {-2, -1}},
 			},
 		},
-		color = 12,
+		sprite = 1,
 	},
 	l = {
 		blocks = {
@@ -112,7 +112,7 @@ local tetrominoes = {
 			},
 		},
 		kick = main_kick_data,
-		color = 9,
+		sprite = 2,
 	},
 	j = {
 		blocks = {
@@ -138,7 +138,7 @@ local tetrominoes = {
 			},
 		},
 		kick = main_kick_data,
-		color = 14,
+		sprite = 3,
 	},
 	o = {
 		blocks = {
@@ -147,7 +147,7 @@ local tetrominoes = {
 				{1, 1},
 			},
 		},
-		color = 10,
+		sprite = 4,
 		-- the o piece has no kick data, as it cannot be rotated
 	},
 	s = {
@@ -174,7 +174,7 @@ local tetrominoes = {
 			},
 		},
 		kick = main_kick_data,
-		color = 11,
+		sprite = 5,
 	},
 	z = {
 		blocks = {
@@ -200,7 +200,7 @@ local tetrominoes = {
 			},
 		},
 		kick = main_kick_data,
-		color = 8,
+		sprite = 6,
 	},
 	t = {
 		blocks = {
@@ -226,7 +226,7 @@ local tetrominoes = {
 			},
 		},
 		kick = main_kick_data,
-		color = 13,
+		sprite = 7,
 	}
 }
 
@@ -461,14 +461,12 @@ function state.game:update()
 end
 
 function state.game:draw_block(board_x, board_y, shape, ghost)
-	local x1 = (board_x - 1) * block_size
-	local y1 = visible_board_height * block_size - board_y * block_size
-	local x2 = x1 + block_size
-	local y2 = y1 + block_size
+	local x = (board_x - 1) * block_size
+	local y = visible_board_height * block_size - board_y * block_size
 	if ghost then
-		rect(x1 + 1, y1 + 1, x2 - 1, y2 - 1, tetrominoes[shape].color)
+		spr(tetrominoes[shape].sprite + 16, x, y)
 	else
-		rectfill(x1, y1, x2, y2, tetrominoes[shape].color)
+		spr(tetrominoes[shape].sprite, x, y)
 	end
 end
 
@@ -493,30 +491,54 @@ function state.game:draw_board_grid()
 	end
 	rect(0, 0, board_width * block_size,
 		visible_board_height * block_size, 7)
+	line(1, visible_board_height * block_size + 1,
+		board_width * block_size + 1, visible_board_height * block_size + 1, 6)
+	line(board_width * block_size + 1, 1,
+		board_width * block_size + 1, visible_board_height * block_size + 1, 6)
+end
+
+function state.game:draw_tetromino(shape, x, y, orientation, ghost)
+	orientation = orientation or 1
+	local blocks = tetrominoes[shape].blocks[orientation]
+	for relative_y = 1, #blocks do
+		local row = blocks[relative_y]
+		for relative_x = 1, #row do
+			local board_x = x + relative_x - 1
+			local board_y = y + relative_y - 1
+			if row[relative_x] == 1 then
+				self:draw_block(board_x, board_y, shape, ghost)
+			end
+		end
+	end
 end
 
 function state.game:draw_current_tetromino(ghost)
 	if not self.current_tetromino then return end
 	local c = self.current_tetromino
 	local y = ghost and self:get_hard_drop_y() or c.y
-	local blocks = tetrominoes[c.shape].blocks[c.orientation]
-	for relative_y = 1, #blocks do
-		local row = blocks[relative_y]
-		for relative_x = 1, #row do
-			local board_x = c.x + relative_x - 1
-			local board_y = y + relative_y - 1
-			if row[relative_x] == 1 then
-				self:draw_block(board_x, board_y, c.shape, ghost)
-			end
-		end
-	end
+	self:draw_tetromino(c.shape, c.x, y, c.orientation, ghost)
 end
 
-function state.game:draw()
+function state.game:draw_next_hud()
+	camera(-70, 128 - 18)
+	for i = 1, 3 do
+		self:draw_tetromino(self.next_queue[i], 1, 3 * (-i + 1))
+	end
+	camera()
+end
+
+function state.game:draw_board()
+	camera(-4, -4)
+	self:draw_board_grid()
 	self:draw_board_contents()
 	self:draw_current_tetromino()
 	self:draw_current_tetromino(true)
-	self:draw_board_grid()
+	camera()
+end
+
+function state.game:draw()
+	self:draw_board()
+	self:draw_next_hud()
 end
 
 -->8
@@ -540,3 +562,17 @@ function _draw()
 		current_state:draw()
 	end
 end
+__gfx__
+00000000111111004444440022222200555555003333330022222200111111000000000000000000000000000000000000000000000000000000000000000000
+000000001666c100477794002777e2005666a5003777b300266682001666d1000000000000000000000000000000000000000000000000000000000000000000
+00700700166cc10047799400277ee200566aa500377bb30026688200166dd1000000000000000000000000000000000000000000000000000000000000000000
+0007700016ccc1004799940027eee20056aaa50037bbb3002688820016ddd1000000000000000000000000000000000000000000000000000000000000000000
+000770001cccc100499994002eeee2005aaaa5003bbbb300288882001dddd1000000000000000000000000000000000000000000000000000000000000000000
+00700700111111004444440022222200555555003333330022222200111111000000000000000000000000000000000000000000000000000000000000000000
+00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+000000000cccc000099990000eeee0000aaaa0000bbbb000088880000dddd0000000000000000000000000000000000000000000000000000000000000000000
+000000000c00c000090090000e00e0000a00a0000b00b000080080000d00d0000000000000000000000000000000000000000000000000000000000000000000
+000000000c00c000090090000e00e0000a00a0000b00b000080080000d00d0000000000000000000000000000000000000000000000000000000000000000000
+000000000cccc000099990000eeee0000aaaa0000bbbb000088880000dddd0000000000000000000000000000000000000000000000000000000000000000000
