@@ -336,6 +336,7 @@ function state.game:place_current_tetromino()
 			end
 		end
 	end
+	self:clear_lines()
 	self.gravity_timer = self:get_gravity_interval()
 end
 
@@ -409,6 +410,35 @@ function state.game:rotate(ccw)
 	return false
 end
 
+function state.game:is_line_full(line_number)
+	for x = 1, board_width do
+		if self.board[x][line_number] == 0 then
+			return false
+		end
+	end
+	return true
+end
+
+function state.game:clear_line(line_number)
+	for x = 1, board_width do
+		for y = line_number, board_height - 1 do
+			self.board[x][y] = self.board[x][y + 1]
+		end
+		self.board[x][board_height] = 0
+	end
+end
+
+function state.game:clear_lines()
+	local cleared_lines = false
+	for y = board_height, 1, -1 do
+		if self:is_line_full(y) then
+			self:clear_line(y)
+			cleared_lines = true
+		end
+	end
+	return cleared_lines
+end
+
 function state.game:update()
 	if btnp(0) then self:shift(-1) end
 	if btnp(1) then self:shift(1) end
@@ -475,7 +505,6 @@ function state.game:draw()
 	self:draw_current_tetromino()
 	self:draw_current_tetromino(true)
 	self:draw_board_grid()
-	print(self.gravity_timer, 4, 4, 7)
 end
 
 -->8
