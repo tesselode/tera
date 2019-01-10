@@ -279,8 +279,8 @@ end
 function state.game:enter()
 	self:init_board()
 	self:init_next_queue()
-	self:spawn_tetromino()
 	self.gravity_timer = self:get_gravity_interval()
+	self.line_clear_animation_timer = 0
 end
 
 function state.game:is_block_free(x, y)
@@ -337,6 +337,7 @@ function state.game:place_current_tetromino()
 		end
 	end
 	self:clear_lines()
+	self.current_tetromino = nil
 	self.gravity_timer = self:get_gravity_interval()
 end
 
@@ -346,7 +347,6 @@ function state.game:apply_gravity()
 		c.y -= 1
 	else
 		self:place_current_tetromino()
-		self:spawn_tetromino()
 	end
 end
 
@@ -367,7 +367,6 @@ end
 function state.game:hard_drop()
 	self.current_tetromino.y = self:get_hard_drop_y()
 	self:place_current_tetromino()
-	self:spawn_tetromino()
 end
 
 function state.game:update_gravity()
@@ -436,10 +435,22 @@ function state.game:clear_lines()
 			cleared_lines = true
 		end
 	end
+	if cleared_lines then
+		self.line_clear_animation_timer = 30
+	end
 	return cleared_lines
 end
 
 function state.game:update()
+	if self.line_clear_animation_timer > 0 then
+		self.line_clear_animation_timer -= 1
+		if self.line_clear_animation_timer > 0 then
+			return
+		end
+	end
+	if not self.current_tetromino then
+		self:spawn_tetromino()
+	end
 	if btnp(0) then self:shift(-1) end
 	if btnp(1) then self:shift(1) end
 	if btnp(2) then self:hard_drop() end
@@ -485,6 +496,7 @@ function state.game:draw_board_grid()
 end
 
 function state.game:draw_current_tetromino(ghost)
+	if not self.current_tetromino then return end
 	local c = self.current_tetromino
 	local y = ghost and self:get_hard_drop_y() or c.y
 	local blocks = tetrominoes[c.shape].blocks[c.orientation]
