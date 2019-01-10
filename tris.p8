@@ -262,7 +262,7 @@ function state.game:populate_next_queue()
 	for _ = 1, #shapes do
 		local n = ceil(rnd(#shapes))
 		add(self.next_queue, shapes[n])
-		del(shapes, n)
+		del(shapes, shapes[n])
 	end
 end
 
