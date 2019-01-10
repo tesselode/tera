@@ -271,10 +271,15 @@ function state.game:init_next_queue()
 	self:populate_next_queue()
 end
 
+function state.game:get_gravity_interval()
+	return 10
+end
+
 function state.game:enter()
 	self:init_board()
 	self:init_next_queue()
 	self:spawn_tetromino()
+	self.gravity_timer = self:get_gravity_interval()
 end
 
 function state.game:is_block_free(x, y)
@@ -308,12 +313,37 @@ function state.game:spawn_tetromino()
 	self.current_tetromino = {
 		shape = shape,
 		x = 4,
-		y = shape == 'i' and 21 or 22,
+		y = shape == 'i' and 20 or 21,
 		orientation = 1,
 	}
 	local c = self.current_tetromino
 	if self:can_tetromino_fit(c.shape, c.x, c.y - 1, c.orientation) then
 		c.y = c.y - 1
+	end
+end
+
+function state.game:place_current_tetromino()
+	local c = self.current_tetromino
+	local blocks = tetrominoes[c.shape].blocks[c.orientation]
+	for relative_y = 1, #blocks do
+		local row = blocks[relative_y]
+		for relative_x = 1, #row do
+			if row[relative_x] == 1 then
+				local board_x = c.x + relative_x - 1
+				local board_y = c.y + relative_y - 1
+				self.board[board_x][board_y] = c.shape
+			end
+		end
+	end
+end
+
+function state.game:apply_gravity()
+	local c = self.current_tetromino
+	if self:can_tetromino_fit(c.shape, c.x, c.y - 1, c.orientation) then
+		c.y -= 1
+	else
+		self:place_current_tetromino()
+		self:spawn_tetromino()
 	end
 end
 
@@ -329,20 +359,32 @@ function state.game:update()
 			c.x += 1
 		end
 	end
-	if btnp(2) then
-		self:spawn_tetromino()
+	self.gravity_timer -= 1
+	while self.gravity_timer <= 0 do
+		self.gravity_timer += self:get_gravity_interval()
+		self:apply_gravity()
 	end
 end
 
 function state.game:draw_block(board_x, board_y, shape)
 	local x1 = (board_x - 1) * block_size
-	local y1 = visible_board_height * block_size - (board_y - 1) * block_size
+	local y1 = visible_board_height * block_size - board_y * block_size
 	local x2 = x1 + block_size
 	local y2 = y1 + block_size
 	rectfill(x1, y1, x2, y2, tetrominoes[shape].color)
 end
 
-function state.game:draw_board()
+function state.game:draw_board_contents()
+	for x = 1, board_width do
+		for y = 1, board_height do
+			if self.board[x][y] ~= 0 then
+				self:draw_block(x, y, self.board[x][y])
+			end
+		end
+	end
+end
+
+function state.game:draw_board_grid()
 	for x = 1, board_width - 1 do
 		line(x * block_size, 0, x * block_size,
 			visible_board_height * block_size, 1)
@@ -371,9 +413,9 @@ function state.game:draw_current_tetromino()
 end
 
 function state.game:draw()
-	self:draw_board()
+	self:draw_board_contents()
 	self:draw_current_tetromino()
-	print(self.current_tetromino.x .. ' ' .. self.current_tetromino.y, 0, 0, 6)
+	self:draw_board_grid()
 end
 
 -->8
