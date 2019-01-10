@@ -86,6 +86,7 @@ local tetrominoes = {
 				ccw = {{0, 0}, {1, 0}, {-2, 0}, {1, 2}, {-2, -1}},
 			},
 		},
+		color = 12,
 	},
 	l = {
 		blocks = {
@@ -111,6 +112,7 @@ local tetrominoes = {
 			},
 		},
 		kick = main_kick_data,
+		color = 9,
 	},
 	j = {
 		blocks = {
@@ -136,6 +138,7 @@ local tetrominoes = {
 			},
 		},
 		kick = main_kick_data,
+		color = 14,
 	},
 	o = {
 		blocks = {
@@ -144,6 +147,7 @@ local tetrominoes = {
 				{1, 1},
 			},
 		},
+		color = 10,
 		-- the o piece has no kick data, as it cannot be rotated
 	},
 	s = {
@@ -170,6 +174,7 @@ local tetrominoes = {
 			},
 		},
 		kick = main_kick_data,
+		color = 11,
 	},
 	z = {
 		blocks = {
@@ -195,6 +200,7 @@ local tetrominoes = {
 			},
 		},
 		kick = main_kick_data,
+		color = 8,
 	},
 	t = {
 		blocks = {
@@ -220,6 +226,7 @@ local tetrominoes = {
 			},
 		},
 		kick = main_kick_data,
+		color = 13,
 	}
 }
 
@@ -327,12 +334,12 @@ function state.game:update()
 	end
 end
 
-function state.game:draw_block(board_x, board_y)
+function state.game:draw_block(board_x, board_y, shape)
 	local x1 = (board_x - 1) * block_size
 	local y1 = visible_board_height * block_size - (board_y - 1) * block_size
 	local x2 = x1 + block_size
 	local y2 = y1 + block_size
-	rectfill(x1, y1, x2, y2, 8)
+	rectfill(x1, y1, x2, y2, tetrominoes[shape].color)
 end
 
 function state.game:draw_board()
@@ -357,7 +364,7 @@ function state.game:draw_current_tetromino()
 			local board_x = c.x + relative_x - 1
 			local board_y = c.y + relative_y - 1
 			if row[relative_x] == 1 then
-				self:draw_block(board_x, board_y)
+				self:draw_block(board_x, board_y, c.shape)
 			end
 		end
 	end
@@ -373,7 +380,10 @@ end
 -- main loop
 
 local current_state = state.game
-current_state:enter()
+
+function _init()
+	current_state:enter()
+end
 
 function _update60()
 	if current_state.update then
