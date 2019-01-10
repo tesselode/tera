@@ -358,6 +358,11 @@ function state.game:get_hard_drop_y()
 	return y
 end
 
+function state.game:soft_drop()
+	self:apply_gravity()
+	self.gravity_timer = self:get_gravity_interval()
+end
+
 function state.game:hard_drop()
 	self.current_tetromino.y = self:get_hard_drop_y()
 	self:place_current_tetromino()
@@ -372,25 +377,45 @@ function state.game:update_gravity()
 	end
 end
 
-function state.game:shift_left()
+function state.game:shift(dir)
 	local c = self.current_tetromino
-	if self:can_tetromino_fit(c.shape, c.x - 1, c.y, c.orientation) then
-		c.x -= 1
+	if self:can_tetromino_fit(c.shape, c.x + dir, c.y, c.orientation) then
+		c.x += dir
 	end
 end
 
-function state.game:shift_right()
+function state.game:rotate(ccw)
 	local c = self.current_tetromino
-	if self:can_tetromino_fit(c.shape, c.x + 1, c.y, c.orientation) then
-		c.x += 1
+	if c.shape == 'o' then return false end -- o pieces can't rotate
+	local dir = ccw and 'ccw' or 'cw'
+	local new_orientation = c.orientation
+	if ccw then
+		new_orientation -= 1
+		if new_orientation < 1 then new_orientation = 4 end
+	else
+		new_orientation += 1
+		if new_orientation > 4 then new_orientation = 1 end
 	end
+	local tests = tetrominoes[c.shape].kick[new_orientation][dir]
+	for test in all(tests) do
+		local dx, dy = test[1], test[2]
+		if self:can_tetromino_fit(c.shape, c.x + dx, c.y + dy, new_orientation) then
+			c.x += dx
+			c.y += dy
+			c.orientation = new_orientation
+			return true
+		end
+	end
+	return false
 end
 
 function state.game:update()
-	if btnp(0) then self:shift_left() end
-	if btnp(1) then self:shift_right() end
+	if btnp(0) then self:shift(-1) end
+	if btnp(1) then self:shift(1) end
 	if btnp(2) then self:hard_drop() end
-	if btnp(3) then self:apply_gravity() end
+	if btnp(3) then self:soft_drop() end
+	if btnp(4) then self:rotate(true) end
+	if btnp(5) then self:rotate() end
 	self:update_gravity()
 end
 
@@ -450,6 +475,7 @@ function state.game:draw()
 	self:draw_current_tetromino()
 	self:draw_current_tetromino(true)
 	self:draw_board_grid()
+	print(self.gravity_timer, 4, 4, 7)
 end
 
 -->8
