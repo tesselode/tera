@@ -279,6 +279,7 @@ end
 function state.game:enter()
 	self:init_board()
 	self:init_next_queue()
+	self.held = false
 	self.gravity_timer = self:get_gravity_interval()
 	self.line_clear_animation_timer = 0
 end
@@ -305,12 +306,17 @@ function state.game:can_tetromino_fit(shape, x, y, orientation)
 	return true
 end
 
-function state.game:spawn_tetromino()
+function state.game:get_next_shape()
 	local shape = self.next_queue[1]
 	del(self.next_queue, shape)
 	if #self.next_queue < 7 then
 		self:populate_next_queue()
 	end
+	return shape
+end
+
+function state.game:spawn_tetromino(shape)
+	shape = shape or self:get_next_shape()
 	self.current_tetromino = {
 		shape = shape,
 		x = 4,
@@ -321,6 +327,13 @@ function state.game:spawn_tetromino()
 	if self:can_tetromino_fit(c.shape, c.x, c.y - 1, c.orientation) then
 		c.y = c.y - 1
 	end
+end
+
+function state.game:hold()
+	local previous_held = self.held
+	self.held = self.current_tetromino.shape
+	self.held_this_turn = false
+	self:spawn_tetromino(previous_held)
 end
 
 function state.game:place_current_tetromino()
@@ -339,6 +352,7 @@ function state.game:place_current_tetromino()
 	self:clear_lines()
 	self.current_tetromino = nil
 	self.gravity_timer = self:get_gravity_interval()
+	self.held_this_turn = false
 end
 
 function state.game:apply_gravity()
@@ -455,8 +469,22 @@ function state.game:update()
 	if btnp(1) then self:shift(1) end
 	if btnp(2) then self:hard_drop() end
 	if btnp(3) then self:soft_drop() end
-	if btnp(4) then self:rotate(true) end
-	if btnp(5) then self:rotate() end
+	if btnp(4) then
+		if btn(5) and not self.held_this_turn then
+			self:hold()
+			self.held_this_turn = true
+		else
+			self:rotate(true)
+		end
+	end
+	if btnp(5) then
+		if btn(4) and not self.held_this_turn then
+			self:hold()
+			self.held_this_turn = true
+		else
+			self:rotate()
+		end
+	end
 	self:update_gravity()
 end
 
@@ -519,16 +547,24 @@ function state.game:draw_current_tetromino(ghost)
 	self:draw_tetromino(c.shape, c.x, y, c.orientation, ghost)
 end
 
-function state.game:draw_next_hud()
-	camera(-70, 128 - 18)
+function state.game:draw_hud()
+	-- next pieces
+	camera(-102, 128 - 18)
 	for i = 1, 3 do
 		self:draw_tetromino(self.next_queue[i], 1, 3 * (-i + 1))
 	end
 	camera()
+
+	-- held piece
+	if self.held then
+		camera(-12, 128 - 18)
+		self:draw_tetromino(self.held, 1, 0)
+		camera()
+	end
 end
 
 function state.game:draw_board()
-	camera(-4, -4)
+	camera(-32, -4)
 	self:draw_board_grid()
 	self:draw_board_contents()
 	self:draw_current_tetromino()
@@ -538,7 +574,7 @@ end
 
 function state.game:draw()
 	self:draw_board()
-	self:draw_next_hud()
+	self:draw_hud()
 end
 
 -->8
