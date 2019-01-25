@@ -288,26 +288,44 @@ setmetatable(class.particle, {
 -- line clear animation
 
 class.line_clear_animation = {
-	duration = 45,
+	duration = 28,
+	particle_spawn_interval = 2,
 }
 class.line_clear_animation.__index = class.line_clear_animation
 
 function class.line_clear_animation:new(x, y)
 	self.x = x
 	self.y = y
-	self.life = self.duration
+	self.time = 0
+	self.width = 0
+	self.particle_spawn_timer = self.particle_spawn_interval
+	self.effects = {}
 end
 
 function class.line_clear_animation:update()
-	self.life -= 1
-	if self.life <= 0 then
+	self.width += (board_width * block_size - self.width) / 3
+	if self.time < 20 then
+		self.particle_spawn_timer -= 1
+		while self.particle_spawn_timer <= 0 do
+			self.particle_spawn_timer += self.particle_spawn_interval
+			add(self.effects, class.particle(self.x + self.width, self.y, 7))
+			add(self.effects, class.particle(self.x + self.width, self.y + block_size, 7))
+		end
+	end
+	self.time += 1
+	if self.time >= self.duration then
 		self.dead = true
 	end
 end
 
 function class.line_clear_animation:draw()
-	rectfill(self.x, self.y, self.x + board_width * block_size,
-		self.y + block_size, 7)
+	local color = self.time > 26 and 1
+	           or self.time > 23 and 2
+			   or self.time > 20 and 4
+			   or self.time > 17 and 6
+			   or 7
+	rectfill(self.x, self.y, self.x + self.width,
+		self.y + block_size, color)
 end
 
 setmetatable(class.line_clear_animation, {
@@ -362,6 +380,7 @@ function state.game:enter()
 	self:init_next_queue()
 	self.held = false
 	self.gravity_timer = self:get_gravity_interval()
+	self.filled_lines = {}
 	self.line_clear_animation_timer = 0
 	self.effects = {}
 end
@@ -431,7 +450,7 @@ function state.game:place_current_tetromino()
 			end
 		end
 	end
-	self:clear_lines()
+	self:detect_filled_lines()
 	self.current_tetromino = nil
 	self.gravity_timer = self:get_gravity_interval()
 	self.held_this_turn = false
@@ -524,18 +543,25 @@ function state.game:clear_line(line_number)
 end
 
 function state.game:clear_lines()
-	local cleared_lines = false
+	for line in all(self.filled_lines) do
+		self:clear_line(line)
+		del(self.filled_lines, line)
+	end
+end
+
+function state.game:detect_filled_lines()
+	local filled_lines = false
 	for y = board_height, 1, -1 do
 		if self:is_line_full(y) then
-			self:clear_line(y)
+			add(self.filled_lines, y)
 			add(self.effects, class.line_clear_animation(self:board_to_screen(1, y)))
-			cleared_lines = true
+			filled_lines = true
 		end
 	end
-	if cleared_lines then
+	if filled_lines then
 		self.line_clear_animation_timer = class.line_clear_animation.duration
 	end
-	return cleared_lines
+	return filled_lines
 end
 
 function state.game:update_gameplay()
@@ -545,6 +571,7 @@ function state.game:update_gameplay()
 			return
 		end
 	end
+	self:clear_lines()
 	if not self.current_tetromino then
 		self:spawn_tetromino()
 	end
@@ -574,6 +601,12 @@ end
 function state.game:update_cosmetic()
 	for effect in all(self.effects) do
 		effect:update()
+		if effect.effects then
+			for e in all(effect.effects) do
+				add(self.effects, e)
+				del(effect.effects, e)
+			end
+		end
 		if effect.dead then
 			del(self.effects, effect)
 		end
