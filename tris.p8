@@ -464,7 +464,11 @@ function state.game:init_next_queue()
 end
 
 function state.game:get_gravity_interval()
-	return 60
+	return 10
+end
+
+function state.game:get_lock_delay()
+	return 30
 end
 
 function state.game:enter()
@@ -472,6 +476,7 @@ function state.game:enter()
 	self:init_next_queue()
 	self.shift_repeat_timer = -1
 	self.shift_repeat_direction = 0
+	self.lock_timer = -1
 	self.held = false
 	self.gravity_timer = self:get_gravity_interval()
 	self.filled_lines = {}
@@ -553,6 +558,7 @@ function state.game:place_current_tetromino(hard_drop)
 	self:detect_filled_lines()
 	self.current_tetromino = nil
 	self.gravity_timer = self:get_gravity_interval()
+	self.lock_timer = -1
 	self.held_this_turn = false
 	sfx(hard_drop and sound.hard_drop or sound.soft_drop)
 end
@@ -563,7 +569,7 @@ function state.game:apply_gravity()
 		c.y -= 1
 		sfx(sound.fall)
 	else
-		self:place_current_tetromino()
+		self.lock_timer = self:get_lock_delay()
 	end
 end
 
@@ -587,6 +593,13 @@ function state.game:hard_drop()
 end
 
 function state.game:update_gravity()
+	if self.lock_timer ~= -1 then
+		self.lock_timer -= 1
+		if self.lock_timer <= 0 then
+			self:place_current_tetromino()
+		end
+		return
+	end
 	self.gravity_timer -= (btn(3) and fast_drop_multiplier or 1)
 	while self.gravity_timer <= 0 do
 		self.gravity_timer += self:get_gravity_interval()
@@ -598,6 +611,7 @@ function state.game:shift(dir)
 	local c = self.current_tetromino
 	if self:can_tetromino_fit(c.shape, c.x + dir, c.y, c.orientation) then
 		c.x += dir
+		self.lock_timer = -1
 		sfx(sound.shift)
 	end
 end
@@ -621,6 +635,7 @@ function state.game:rotate(ccw)
 			c.x += dx
 			c.y += dy
 			c.orientation = new_orientation
+			self.lock_timer = -1
 			sfx(ccw and sound.rotate_ccw or sound.rotate_cw)
 			return true
 		end
@@ -853,6 +868,7 @@ function state.game:draw()
 	for effect in all(self.effects) do
 		effect:draw()
 	end
+	print(self.lock_timer, 0, 0, 7)
 end
 
 -->8
