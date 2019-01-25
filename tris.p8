@@ -432,6 +432,8 @@ setmetatable(class.tetris_message, {
 state.game = {
 	board_draw_x = 32,
 	board_draw_y = 4,
+	shift_first_repeat_time = 10,
+	shift_repeat_time = 1,
 }
 
 function state.game:init_board()
@@ -468,6 +470,8 @@ end
 function state.game:enter()
 	self:init_board()
 	self:init_next_queue()
+	self.shift_repeat_timer = -1
+	self.shift_repeat_direction = 0
 	self.held = false
 	self.gravity_timer = self:get_gravity_interval()
 	self.filled_lines = {}
@@ -595,8 +599,6 @@ function state.game:shift(dir)
 	if self:can_tetromino_fit(c.shape, c.x + dir, c.y, c.orientation) then
 		c.x += dir
 		sfx(sound.shift)
-	else
-		sfx(sound.illegal)
 	end
 end
 
@@ -690,8 +692,28 @@ function state.game:update_gameplay()
 	if not self.current_tetromino then
 		self:spawn_tetromino()
 	end
-	if btnp(0) then self:shift(-1) end
-	if btnp(1) then self:shift(1) end
+
+	if not (btn(0) or btn(1)) then
+		self.shift_repeat_timer = -1
+		self.shift_repeat_direction = 0
+	end
+	if self.shift_repeat_timer ~= -1 and self.shift_repeat_direction ~= 0 then
+		self.shift_repeat_timer -= 1
+		if self.shift_repeat_timer == 0 then
+			self.shift_repeat_timer = self.shift_repeat_time
+			self:shift(self.shift_repeat_direction)
+		end
+	end
+	if btnp(0) and self.shift_repeat_direction ~= -1 then
+		self.shift_repeat_timer = self.shift_first_repeat_time
+		self.shift_repeat_direction = -1
+		self:shift(-1)
+	end
+	if btnp(1) and self.shift_repeat_direction ~= 1 then
+		self.shift_repeat_timer = self.shift_first_repeat_time
+		self.shift_repeat_direction = 1
+		self:shift(1)
+	end
 	if btnp(2) then self:hard_drop() end
 	if btnp(3) then self:soft_drop() end
 	if btnp(4) then
