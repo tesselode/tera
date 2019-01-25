@@ -241,6 +241,49 @@ local fast_drop_multiplier = 10
 local state = {}
 
 -->8
+-- classes
+
+local class = {}
+
+class.particle = {}
+class.particle.__index = class.particle
+
+function class.particle:new(x, y, color)
+	self.x = x
+	self.y = y
+	self.color = color
+	self.angle = rnd()
+	self.angular_velocity = (-.5 + rnd()) / 100
+	self.speed = 1 + rnd()
+	self.damping = (1 + rnd()) / 60
+	self.life = 60 + 60 * rnd()
+end
+
+function class.particle:update()
+	self.angular_velocity += (-.5 + rnd()) / 1000
+	self.angle += self.angular_velocity
+	self.speed -= self.damping
+	self.x += self.speed * cos(self.angle)
+	self.y += self.speed * sin(self.angle)
+	self.life -= 1
+	if self.life <= 0 then
+		self.dead = true
+	end
+end
+
+function class.particle:draw()
+	pset(self.x, self.y, self.color)
+end
+
+setmetatable(class.particle, {
+	__call = function(self, ...)
+		local particle = setmetatable({}, class.particle)
+		particle:new(...)
+		return particle
+	end,
+})
+
+-->8
 -- gameplay state
 
 state.game = {}
@@ -282,6 +325,8 @@ function state.game:enter()
 	self.held = false
 	self.gravity_timer = self:get_gravity_interval()
 	self.line_clear_animation_timer = 0
+	self.effects = {}
+	self.particle_timer = 5
 end
 
 function state.game:is_block_free(x, y)
@@ -456,6 +501,18 @@ function state.game:clear_lines()
 end
 
 function state.game:update()
+	self.particle_timer -= 1
+	while self.particle_timer <= 0 do
+		self.particle_timer += 5
+		add(self.effects, class.particle(64, 64, 7))
+	end
+	for effect in all(self.effects) do
+		effect:update()
+		if effect.dead then
+			del(self.effects, effect)
+		end
+	end
+
 	if self.line_clear_animation_timer > 0 then
 		self.line_clear_animation_timer -= 1
 		if self.line_clear_animation_timer > 0 then
@@ -575,6 +632,9 @@ end
 function state.game:draw()
 	self:draw_board()
 	self:draw_hud()
+	for effect in all(self.effects) do
+		effect:draw()
+	end
 end
 
 -->8
