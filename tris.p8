@@ -292,10 +292,9 @@ class.line_clear_animation = {
 }
 class.line_clear_animation.__index = class.line_clear_animation
 
-function class.line_clear_animation:new(x, y, lines)
+function class.line_clear_animation:new(x, y)
 	self.x = x
 	self.y = y
-	self.lines = lines
 	self.life = self.duration
 end
 
@@ -308,7 +307,7 @@ end
 
 function class.line_clear_animation:draw()
 	rectfill(self.x, self.y, self.x + board_width * block_size,
-		self.y + self.lines * block_size, 7)
+		self.y + block_size, 7)
 end
 
 setmetatable(class.line_clear_animation, {
@@ -365,9 +364,6 @@ function state.game:enter()
 	self.gravity_timer = self:get_gravity_interval()
 	self.line_clear_animation_timer = 0
 	self.effects = {}
-	local x, y = self:board_to_screen(1, 1)
-	add(self.effects, class.line_clear_animation(x, y, 1))
-	self.particle_timer = 5
 end
 
 function state.game:is_block_free(x, y)
@@ -532,11 +528,12 @@ function state.game:clear_lines()
 	for y = board_height, 1, -1 do
 		if self:is_line_full(y) then
 			self:clear_line(y)
+			add(self.effects, class.line_clear_animation(self:board_to_screen(1, y)))
 			cleared_lines = true
 		end
 	end
 	if cleared_lines then
-		self.line_clear_animation_timer = 30
+		self.line_clear_animation_timer = class.line_clear_animation.duration
 	end
 	return cleared_lines
 end
@@ -575,11 +572,6 @@ function state.game:update_gameplay()
 end
 
 function state.game:update_cosmetic()
-	self.particle_timer -= 1
-	while self.particle_timer <= 0 do
-		self.particle_timer += 5
-		add(self.effects, class.particle(64, 64, 7))
-	end
 	for effect in all(self.effects) do
 		effect:update()
 		if effect.dead then
