@@ -264,6 +264,32 @@ local fast_drop_multiplier = 10
 local state = {}
 
 -->8
+-- utilities
+
+local function get_text_length(text)
+	return #text * 4
+end
+
+local function printf(text, x, y, color, align, outline_color)
+	if align == 'center' then
+		x -= get_text_length(text) / 2
+	elseif align == 'right' then
+		x -= get_text_length(text)
+	end
+	if outline_color then
+		print(text, x - 1, y - 1, outline_color)
+		print(text, x, y - 1, outline_color)
+		print(text, x + 1, y - 1, outline_color)
+		print(text, x + 1, y, outline_color)
+		print(text, x + 1, y + 1, outline_color)
+		print(text, x, y + 1, outline_color)
+		print(text, x - 1, y + 1, outline_color)
+		print(text, x - 1, y, outline_color)
+	end
+	print(text, x, y, color)
+end
+
+-->8
 -- classes
 
 local class = {}
@@ -356,6 +382,40 @@ setmetatable(class.line_clear_animation, {
 		local animation = setmetatable({}, class.line_clear_animation)
 		animation:new(...)
 		return animation
+	end,
+})
+
+-- tetris message
+
+class.tetris_message = {
+	duration = 28,
+}
+class.tetris_message.__index = class.tetris_message
+
+function class.tetris_message:new(x, y)
+	self.x = x
+	self.y = y + block_size
+	self.target_y = y
+	self.life = self.duration
+end
+
+function class.tetris_message:update()
+	self.y += (self.target_y - self.y) * .1
+	self.life -= 1
+	if self.life <= 0 then
+		self.dead = true
+	end
+end
+
+function class.tetris_message:draw()
+	printf('tetris', self.x, self.y, 7, 'center', 0)
+end
+
+setmetatable(class.tetris_message, {
+	__call = function(self, ...)
+		local message = setmetatable({}, class.tetris_message)
+		message:new(...)
+		return message
 	end,
 })
 
@@ -594,6 +654,9 @@ function state.game:detect_filled_lines()
 	if filled_lines > 0 then
 		self.line_clear_animation_timer = class.line_clear_animation.duration
 		if filled_lines >= 4 then
+			local l = self.filled_lines
+			local y = (l[1] + l[2] + l[3] + l[4]) / 4
+			add(self.effects, class.tetris_message(self:board_to_screen(board_width / 2 + 1, y)))
 			sfx(sound.tetris)
 		elseif filled_lines == 3 then
 			sfx(sound.triple)
