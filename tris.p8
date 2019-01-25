@@ -811,8 +811,8 @@ end
 function state.game:draw_board()
 	self:draw_board_grid()
 	self:draw_board_contents()
-	self:draw_current_tetromino()
 	self:draw_current_tetromino(true)
+	self:draw_current_tetromino()
 end
 
 function state.game:draw()
