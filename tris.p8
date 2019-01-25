@@ -500,19 +500,7 @@ function state.game:clear_lines()
 	return cleared_lines
 end
 
-function state.game:update()
-	self.particle_timer -= 1
-	while self.particle_timer <= 0 do
-		self.particle_timer += 5
-		add(self.effects, class.particle(64, 64, 7))
-	end
-	for effect in all(self.effects) do
-		effect:update()
-		if effect.dead then
-			del(self.effects, effect)
-		end
-	end
-
+function state.game:update_gameplay()
 	if self.line_clear_animation_timer > 0 then
 		self.line_clear_animation_timer -= 1
 		if self.line_clear_animation_timer > 0 then
@@ -543,6 +531,25 @@ function state.game:update()
 		end
 	end
 	self:update_gravity()
+end
+
+function state.game:update_cosmetic()
+	self.particle_timer -= 1
+	while self.particle_timer <= 0 do
+		self.particle_timer += 5
+		add(self.effects, class.particle(64, 64, 7))
+	end
+	for effect in all(self.effects) do
+		effect:update()
+		if effect.dead then
+			del(self.effects, effect)
+		end
+	end
+end
+
+function state.game:update()
+	self:update_cosmetic()
+	self:update_gameplay()
 end
 
 function state.game:draw_block(board_x, board_y, shape, ghost)
