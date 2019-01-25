@@ -580,17 +580,21 @@ function state.game:update_gameplay()
 	if btnp(2) then self:hard_drop() end
 	if btnp(3) then self:soft_drop() end
 	if btnp(4) then
-		if btn(5) and not self.held_this_turn then
-			self:hold()
-			self.held_this_turn = true
+		if btn(5) then
+			if not self.held_this_turn then
+				self:hold()
+				self.held_this_turn = true
+			end
 		else
 			self:rotate(true)
 		end
 	end
 	if btnp(5) then
-		if btn(4) and not self.held_this_turn then
-			self:hold()
-			self.held_this_turn = true
+		if btn(4) then
+			if not self.held_this_turn then
+				self:hold()
+				self.held_this_turn = true
+			end
 		else
 			self:rotate()
 		end
