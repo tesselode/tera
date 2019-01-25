@@ -245,6 +245,8 @@ local state = {}
 
 local class = {}
 
+-- particles
+
 class.particle = {}
 class.particle.__index = class.particle
 
@@ -283,10 +285,47 @@ setmetatable(class.particle, {
 	end,
 })
 
+-- line clear animation
+
+class.line_clear_animation = {
+	duration = 45,
+}
+class.line_clear_animation.__index = class.line_clear_animation
+
+function class.line_clear_animation:new(x, y, lines)
+	self.x = x
+	self.y = y
+	self.lines = lines
+	self.life = self.duration
+end
+
+function class.line_clear_animation:update()
+	self.life -= 1
+	if self.life <= 0 then
+		self.dead = true
+	end
+end
+
+function class.line_clear_animation:draw()
+	rectfill(self.x, self.y, self.x + board_width * block_size,
+		self.y + self.lines * block_size, 7)
+end
+
+setmetatable(class.line_clear_animation, {
+	__call = function(self, ...)
+		local animation = setmetatable({}, class.line_clear_animation)
+		animation:new(...)
+		return animation
+	end,
+})
+
 -->8
 -- gameplay state
 
-state.game = {}
+state.game = {
+	board_draw_x = 32,
+	board_draw_y = 4,
+}
 
 function state.game:init_board()
 	self.board = {}
@@ -326,6 +365,8 @@ function state.game:enter()
 	self.gravity_timer = self:get_gravity_interval()
 	self.line_clear_animation_timer = 0
 	self.effects = {}
+	local x, y = self:board_to_screen(1, 1)
+	add(self.effects, class.line_clear_animation(x, y, 1))
 	self.particle_timer = 5
 end
 
@@ -552,9 +593,13 @@ function state.game:update()
 	self:update_gameplay()
 end
 
+function state.game:board_to_screen(board_x, board_y)
+	return self.board_draw_x + (board_x - 1) * block_size, 
+		self.board_draw_y + visible_board_height * block_size - board_y * block_size
+end
+
 function state.game:draw_block(board_x, board_y, shape, ghost)
-	local x = (board_x - 1) * block_size
-	local y = visible_board_height * block_size - board_y * block_size
+	local x, y = self:board_to_screen(board_x, board_y)
 	if ghost then
 		spr(tetrominoes[shape].sprite + 16, x, y)
 	else
@@ -573,6 +618,7 @@ function state.game:draw_board_contents()
 end
 
 function state.game:draw_board_grid()
+	camera(-self.board_draw_x, -self.board_draw_y)
 	for x = 1, board_width - 1 do
 		line(x * block_size, 0, x * block_size,
 			visible_board_height * block_size, 1)
@@ -587,6 +633,7 @@ function state.game:draw_board_grid()
 		board_width * block_size + 1, visible_board_height * block_size + 1, 6)
 	line(board_width * block_size + 1, 1,
 		board_width * block_size + 1, visible_board_height * block_size + 1, 6)
+	camera()
 end
 
 function state.game:draw_tetromino(shape, x, y, orientation, ghost)
@@ -613,7 +660,7 @@ end
 
 function state.game:draw_hud()
 	-- next pieces
-	camera(-102, 128 - 18)
+	camera(-68, 128 - 18)
 	for i = 1, 3 do
 		self:draw_tetromino(self.next_queue[i], 1, 3 * (-i + 1))
 	end
@@ -621,19 +668,17 @@ function state.game:draw_hud()
 
 	-- held piece
 	if self.held then
-		camera(-12, 128 - 18)
+		camera(28, 128 - 18)
 		self:draw_tetromino(self.held, 1, 0)
 		camera()
 	end
 end
 
 function state.game:draw_board()
-	camera(-32, -4)
 	self:draw_board_grid()
 	self:draw_board_contents()
 	self:draw_current_tetromino()
 	self:draw_current_tetromino(true)
-	camera()
 end
 
 function state.game:draw()
