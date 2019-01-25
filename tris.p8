@@ -87,6 +87,7 @@ local tetrominoes = {
 			},
 		},
 		sprite = 1,
+		color = 12,
 		sound = 63,
 	},
 	l = {
@@ -114,6 +115,7 @@ local tetrominoes = {
 		},
 		kick = main_kick_data,
 		sprite = 2,
+		color = 9,
 		sound = 61,
 	},
 	j = {
@@ -141,6 +143,7 @@ local tetrominoes = {
 		},
 		kick = main_kick_data,
 		sprite = 3,
+		color = 14,
 		sound = 62,
 	},
 	o = {
@@ -151,6 +154,7 @@ local tetrominoes = {
 			},
 		},
 		sprite = 4,
+		color = 10,
 		sound = 57,
 		-- the o piece has no kick data, as it cannot be rotated
 	},
@@ -179,6 +183,7 @@ local tetrominoes = {
 		},
 		kick = main_kick_data,
 		sprite = 5,
+		color = 11,
 		sound = 59,
 	},
 	z = {
@@ -206,6 +211,7 @@ local tetrominoes = {
 		},
 		kick = main_kick_data,
 		sprite = 6,
+		color = 8,
 		sound = 60,
 	},
 	t = {
@@ -233,6 +239,7 @@ local tetrominoes = {
 		},
 		kick = main_kick_data,
 		sprite = 7,
+		color = 13,
 		sound = 58,
 	}
 }
@@ -299,7 +306,7 @@ local class = {}
 class.particle = {}
 class.particle.__index = class.particle
 
-function class.particle:new(x, y, color)
+function class.particle:new(x, y, color, life_multiplier)
 	self.x = x
 	self.y = y
 	self.color = color
@@ -307,7 +314,7 @@ function class.particle:new(x, y, color)
 	self.angular_velocity = (-.5 + rnd()) / 100
 	self.speed = 1 + rnd()
 	self.damping = (1 + rnd()) / 60
-	self.life = 60 + 60 * rnd()
+	self.life = (60 + 60 * rnd()) * (life_multiplier or 1)
 end
 
 function class.particle:update()
@@ -522,7 +529,7 @@ function state.game:hold()
 	sfx(sound.hold)
 end
 
-function state.game:place_current_tetromino()
+function state.game:place_current_tetromino(hard_drop)
 	local c = self.current_tetromino
 	local blocks = tetrominoes[c.shape].blocks[c.orientation]
 	for relative_y = 1, #blocks do
@@ -532,6 +539,10 @@ function state.game:place_current_tetromino()
 				local board_x = c.x + relative_x - 1
 				local board_y = c.y + relative_y - 1
 				self.board[board_x][board_y] = c.shape
+				if hard_drop then
+					local x, y = self:board_to_screen(board_x, board_y)
+					add(self.effects, class.particle(x, y, tetrominoes[c.shape].color, 1/4))
+				end
 			end
 		end
 	end
@@ -539,6 +550,7 @@ function state.game:place_current_tetromino()
 	self.current_tetromino = nil
 	self.gravity_timer = self:get_gravity_interval()
 	self.held_this_turn = false
+	sfx(hard_drop and sound.hard_drop or sound.soft_drop)
 end
 
 function state.game:apply_gravity()
@@ -548,7 +560,6 @@ function state.game:apply_gravity()
 		sfx(sound.fall)
 	else
 		self:place_current_tetromino()
-		sfx(sound.soft_drop)
 	end
 end
 
@@ -568,8 +579,7 @@ end
 
 function state.game:hard_drop()
 	self.current_tetromino.y = self:get_hard_drop_y()
-	self:place_current_tetromino()
-	sfx(sound.hard_drop)
+	self:place_current_tetromino(true)
 end
 
 function state.game:update_gravity()
