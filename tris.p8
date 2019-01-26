@@ -265,7 +265,6 @@ local board_width = 10
 local board_height = 40
 local visible_board_height = 20
 local block_size = 6
-local fast_drop_multiplier = 10
 
 -- organization --
 local state = {}
@@ -434,8 +433,7 @@ state.game = {
 	board_draw_y = 4,
 	shift_first_repeat_time = 10,
 	shift_repeat_time = 1,
-	soft_drop_first_repeat_time = 10,
-	soft_drop_repeat_time = 5,
+	soft_drop_gravity = 2,
 }
 
 function state.game:init_board()
@@ -466,7 +464,7 @@ function state.game:init_next_queue()
 end
 
 function state.game:get_gravity_interval()
-	return 10
+	return .1
 end
 
 function state.game:get_lock_delay()
@@ -478,7 +476,7 @@ function state.game:enter()
 	self:init_next_queue()
 	self.shift_repeat_timer = -1
 	self.shift_repeat_direction = 0
-	self.soft_drop_repeat_timer = -1
+	self.soft_drop_down_previous = false
 	self.lock_timer = -1
 	self.held = false
 	self.gravity_timer = self:get_gravity_interval()
@@ -531,6 +529,8 @@ function state.game:spawn_tetromino(shape)
 	if self:can_tetromino_fit(c.shape, c.x, c.y - 1, c.orientation) then
 		c.y = c.y - 1
 	end
+	self.gravity_timer = self:get_gravity_interval()
+	self.lock_timer = -1
 end
 
 function state.game:hold()
@@ -559,14 +559,13 @@ function state.game:place_current_tetromino(hard_drop)
 		end
 	end
 	self:detect_filled_lines()
-	self.current_tetromino = nil
-	self.gravity_timer = self:get_gravity_interval()
-	self.lock_timer = -1
+	self.current_tetromino = nil	
 	self.held_this_turn = false
 	sfx(hard_drop and sound.hard_drop or sound.soft_drop)
 end
 
 function state.game:apply_gravity(soft_drop)
+	if not self.current_tetromino then return end
 	local c = self.current_tetromino
 	if self:can_tetromino_fit(c.shape, c.x, c.y - 1, c.orientation) then
 		c.y -= 1
@@ -591,7 +590,7 @@ end
 
 function state.game:soft_drop()
 	self:apply_gravity(true)
-	self.gravity_timer = self:get_gravity_interval()
+	self.gravity_timer = min(self:get_gravity_interval(), self.soft_drop_gravity)
 end
 
 function state.game:hard_drop()
@@ -599,7 +598,7 @@ function state.game:hard_drop()
 	self:place_current_tetromino(true)
 end
 
-function state.game:update_gravity()
+function state.game:update_gravity(soft_drop)
 	if self.lock_timer ~= -1 then
 		self.lock_timer -= 1
 		if self.lock_timer <= 0 then
@@ -607,10 +606,13 @@ function state.game:update_gravity()
 		end
 		return
 	end
-	self.gravity_timer -= (btn(3) and fast_drop_multiplier or 1)
+	self.gravity_timer -= 1
 	while self.gravity_timer <= 0 do
-		self.gravity_timer += self:get_gravity_interval()
-		self.soft_drop_repeat_timer = -1
+		local gravity_interval = self:get_gravity_interval()
+		if soft_drop then
+			gravity_interval = min(gravity_interval, self.soft_drop_gravity)
+		end
+		self.gravity_timer += gravity_interval
 		self:apply_gravity()
 	end
 end
@@ -705,7 +707,7 @@ function state.game:detect_filled_lines()
 end
 
 function state.game:update_gameplay()
-	-- animations that block gameplay
+	-- update blocking animations
 	if self.line_clear_animation_timer > 0 then
 		self.line_clear_animation_timer -= 1
 		if self.line_clear_animation_timer > 0 then
@@ -713,12 +715,13 @@ function state.game:update_gameplay()
 		end
 	end
 
+	-- set up for next piece
 	self:clear_lines()
 	if not self.current_tetromino then
 		self:spawn_tetromino()
 	end
 
-	-- horizontal shift controls
+	-- shift controls
 	if not (btn(0) or btn(1)) then
 		self.shift_repeat_timer = -1
 		self.shift_repeat_direction = 0
@@ -743,20 +746,10 @@ function state.game:update_gameplay()
 
 	-- drop controls
 	if btnp(2) then self:hard_drop() end
-	if not btn(3) then
-		self.soft_drop_repeat_timer = -1
-	end
-	if self.soft_drop_repeat_timer ~= -1 then
-		self.soft_drop_repeat_timer -= 1
-		if self.soft_drop_repeat_timer == 0 then
-			self.soft_drop_repeat_timer = self.soft_drop_repeat_time
-			self:soft_drop()
-		end
-	end
-	if btnp(3) and self.soft_drop_repeat_timer == -1 then
+	if btn(3) and not self.soft_drop_down_previous then
 		self:soft_drop()
-		self.soft_drop_repeat_timer = self.soft_drop_first_repeat_time
 	end
+	self.soft_drop_down_previous = btn(3)
 
 	-- rotation controls
 	if btnp(4) then
@@ -780,8 +773,7 @@ function state.game:update_gameplay()
 		end
 	end
 
-	-- update gravity
-	self:update_gravity()
+	self:update_gravity(btn(3))
 end
 
 function state.game:update_cosmetic()
@@ -898,7 +890,7 @@ function state.game:draw()
 	for effect in all(self.effects) do
 		effect:draw()
 	end
-	print(self.soft_drop_repeat_timer, 0, 0, 7)
+	print(self.lock_timer, 0, 0, 7)
 end
 
 -->8
