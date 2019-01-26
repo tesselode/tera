@@ -260,6 +260,7 @@ sound = {
 	hold = 45,
 	buffered = 44,
 	spin = 43,
+	spin_line_clear = 42,
 }
 
 -- constants --
@@ -395,19 +396,20 @@ setmetatable(class.line_clear_animation, {
 
 -- tetris message
 
-class.tetris_message = {
+class.line_clear_message = {
 	duration = 28,
 }
-class.tetris_message.__index = class.tetris_message
+class.line_clear_message.__index = class.line_clear_message
 
-function class.tetris_message:new(x, y)
+function class.line_clear_message:new(text, x, y)
+	self.text = text
 	self.x = x
 	self.y = y + block_size
 	self.target_y = y
 	self.life = self.duration
 end
 
-function class.tetris_message:update()
+function class.line_clear_message:update()
 	self.y += (self.target_y - self.y) * .1
 	self.life -= 1
 	if self.life <= 0 then
@@ -415,13 +417,13 @@ function class.tetris_message:update()
 	end
 end
 
-function class.tetris_message:draw()
-	printf('tetris', self.x, self.y, 7, 'center', 0)
+function class.line_clear_message:draw()
+	printf(self.text, self.x, self.y, 7, 'center', 0)
 end
 
-setmetatable(class.tetris_message, {
+setmetatable(class.line_clear_message, {
 	__call = function(self, ...)
-		local message = setmetatable({}, class.tetris_message)
+		local message = setmetatable({}, class.line_clear_message)
 		message:new(...)
 		return message
 	end,
@@ -719,14 +721,23 @@ function state.game:detect_filled_lines()
 		if filled_lines >= 4 then
 			local l = self.filled_lines
 			local y = (l[1] + l[2] + l[3] + l[4]) / 4
-			add(self.effects, class.tetris_message(self:board_to_screen(board_width / 2 + 1, y)))
+			add(self.effects, class.line_clear_message('tetris', self:board_to_screen(board_width / 2 + 1, y)))
 			sfx(sound.tetris)
-		elseif filled_lines == 3 then
-			sfx(sound.triple)
-		elseif filled_lines == 2 then
-			sfx(sound.double)
-		elseif filled_lines == 1 then
-			sfx(sound.single)
+		elseif filled_lines >= 0 then
+			if self.is_spun then
+				local y = 0
+				for l in all(self.filled_lines) do y += l end
+				y /= filled_lines
+				add(self.effects, class.line_clear_message('spin', self:board_to_screen(board_width / 2 + 1, y)))
+				sfx(sound.spin_line_clear)
+			end
+			if filled_lines == 3 then
+				sfx(sound.triple)
+			elseif filled_lines == 2 then
+				sfx(sound.double)
+			elseif filled_lines == 1 then
+				sfx(sound.single)
+			end
 		end
 	end
 	return filled_lines > 0
@@ -1034,7 +1045,7 @@ __sfx__
 001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+010700003205536055390553605532055180001800018000180001800018000180001800018000180001800018000180001800018000180001800018000180001800018000180001800018000180001800018000
 010500003063524635000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 0104000024555305552b5551850518505185051850518505185051850518505185051850518505185051850518505185051850518505185051850518505185051850518505185051850518505185051850518505
 000100000d3500d3500d3500e3500f350113501335015350183501c350223502a3501c3001f3002130025300293002f3003530000300003000030000300003000030000300003000030000300003000030000300
