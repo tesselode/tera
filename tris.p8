@@ -576,6 +576,10 @@ function state.game:place_current_tetromino(hard_drop)
 	self.spawn_timer = self:get_spawn_delay()
 	sfx(hard_drop and sound.hard_drop or sound.soft_drop)
 	self.play_tetromino_sound = true
+
+	-- reset some inputs
+	self.shift_repeat_direction = 0
+	self.shift_repeat_timer = -1
 end
 
 function state.game:apply_gravity(soft_drop)
