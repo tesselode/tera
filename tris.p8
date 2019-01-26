@@ -473,7 +473,15 @@ function state.game:get_spawn_delay()
 end
 
 function state.game:get_gravity_interval()
-	return 60
+	if     self.score < 100 then return 45
+	elseif self.score < 200 then return 30
+	elseif self.score < 300 then return 20
+	elseif self.score < 400 then return 10
+	elseif self.score < 500 then return 5
+	elseif self.score < 600 then return 1
+	elseif self.score < 700 then return .5
+	else                         return .1
+	end
 end
 
 function state.game:get_lock_delay()
