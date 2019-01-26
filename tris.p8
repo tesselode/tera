@@ -463,6 +463,10 @@ function state.game:init_next_queue()
 	self:populate_next_queue()
 end
 
+function state.game:get_spawn_delay()
+	return 10
+end
+
 function state.game:get_gravity_interval()
 	return .1
 end
@@ -474,12 +478,14 @@ end
 function state.game:enter()
 	self:init_board()
 	self:init_next_queue()
+	self.spawn_timer = self:get_spawn_delay()
 	self.shift_repeat_timer = -1
 	self.shift_repeat_direction = 0
 	self.soft_drop_down_previous = false
 	self.lock_timer = -1
 	self.held = false
 	self.gravity_timer = self:get_gravity_interval()
+	self.rotation_buffer = {}
 	self.filled_lines = {}
 	self.line_clear_animation_timer = 0
 	self.effects = {}
@@ -561,6 +567,7 @@ function state.game:place_current_tetromino(hard_drop)
 	self:detect_filled_lines()
 	self.current_tetromino = nil	
 	self.held_this_turn = false
+	self.spawn_timer = self:get_spawn_delay()
 	sfx(hard_drop and sound.hard_drop or sound.soft_drop)
 end
 
@@ -626,7 +633,7 @@ function state.game:shift(dir)
 	end
 end
 
-function state.game:rotate(ccw)
+function state.game:rotate(ccw, no_sounds)
 	local c = self.current_tetromino
 	if c.shape == 'o' then return false end -- o pieces can't rotate
 	local dir = ccw and 'ccw' or 'cw'
@@ -646,11 +653,13 @@ function state.game:rotate(ccw)
 			c.y += dy
 			c.orientation = new_orientation
 			self.lock_timer = -1
-			sfx(ccw and sound.rotate_ccw or sound.rotate_cw)
+			if not no_sounds then
+				sfx(ccw and sound.rotate_ccw or sound.rotate_cw)
+			end
 			return true
 		end
 	end
-	sfx(sound.illegal)
+	if not no_sounds then sfx(sound.illegal) end
 	return false
 end
 
@@ -715,10 +724,33 @@ function state.game:update_gameplay()
 		end
 	end
 
-	-- set up for next piece
 	self:clear_lines()
+
+	-- spawn tetrominoes
+	if self.spawn_timer ~= -1 then
+		self.spawn_timer -= 1
+		if self.spawn_timer == 0 then
+			self:spawn_tetromino()
+			self.spawn_timer = -1
+			for ccw in all(self.rotation_buffer) do
+				self:rotate(ccw, true)
+				del(self.rotation_buffer, ccw)
+			end
+			if btn(0) or btn(1) then
+				local dir = btn(0) and -1 or 1
+				local c = self.current_tetromino
+				for _ = 1, board_width do
+					if self:can_tetromino_fit(c.shape, c.x + dir, c.y, c.orientation) then
+						c.x += dir
+					end
+				end
+			end
+		end
+	end
 	if not self.current_tetromino then
-		self:spawn_tetromino()
+		if btnp(4) then add(self.rotation_buffer, true) end
+		if btnp(5) then add(self.rotation_buffer, false) end
+		return
 	end
 
 	-- shift controls
@@ -890,7 +922,7 @@ function state.game:draw()
 	for effect in all(self.effects) do
 		effect:draw()
 	end
-	print(self.lock_timer, 0, 0, 7)
+	print(#self.rotation_buffer, 0, 0, 7)
 end
 
 -->8
