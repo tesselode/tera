@@ -469,23 +469,27 @@ function state.game:init_next_queue()
 end
 
 function state.game:get_spawn_delay()
-	return 10
+	return self.score < 900 and 15 or 10
 end
 
 function state.game:get_gravity_interval()
 	if     self.score < 100 then return 45
-	elseif self.score < 200 then return 30
-	elseif self.score < 300 then return 20
-	elseif self.score < 400 then return 10
-	elseif self.score < 500 then return 5
-	elseif self.score < 600 then return 1
-	elseif self.score < 700 then return .5
+	elseif self.score < 200 then return 20
+	elseif self.score < 300 then return 10
+	elseif self.score < 400 then return 5
+	elseif self.score < 500 then return 1
+	elseif self.score < 600 then return .5
 	else                         return .1
 	end
 end
 
 function state.game:get_lock_delay()
-	return 30
+	if     self.score < 200 then return 30
+	elseif self.score < 400 then return 25
+	elseif self.score < 700 then return 20
+	elseif self.score < 800 then return 17
+	else                         return 15
+	end
 end
 
 function state.game:enter()
