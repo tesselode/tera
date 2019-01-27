@@ -1020,7 +1020,6 @@ function state.game:draw()
 	for effect in all(self.effects) do
 		effect:draw()
 	end
-	print(#self.rotation_buffer, 0, 0, 7)
 end
 
 -->8
