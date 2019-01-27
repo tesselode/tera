@@ -862,16 +862,19 @@ function state.game:update_gameplay()
 			if not self.held_this_turn then
 				self:hold()
 				self.held_this_turn = true
+			else
+				sfx(sound.illegal)
 			end
 		else
 			self:rotate(true)
 		end
-	end
-	if btnp(5) then
+	elseif btnp(5) then
 		if btn(4) then
 			if not self.held_this_turn then
 				self:hold()
 				self.held_this_turn = true
+			else
+				sfx(sound.illegal)
 			end
 		else
 			self:rotate()
@@ -1002,6 +1005,8 @@ function state.game:draw_hud()
 		camera(29, 128 - 49)
 		self:draw_tetromino(self.held, 1, 0, 1, false, true)
 		camera()
+	else
+		printf('🅾️+❎', 12, 42, time() % 2 > 1 and 15 or 7, 'center', 0)
 	end
 
 	-- score
