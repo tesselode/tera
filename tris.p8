@@ -503,6 +503,8 @@ function state.game:enter()
 	self.filled_lines = {}
 	self.is_spun = false
 	self.line_clear_animation_timer = 0
+
+	-- cosmetic
 	self.play_tetromino_sound = true
 	self.effects = {}
 	self.score_y_offset = 0
@@ -1008,13 +1010,30 @@ function state.game:draw_hud()
 end
 
 function state.game:draw_board()
+	rectfill(self.board_draw_x, self.board_draw_y,
+		self.board_draw_x + block_size * board_width,
+		self.board_draw_y + block_size * visible_board_height,
+		0)
 	self:draw_board_grid()
 	self:draw_board_contents()
 	self:draw_current_tetromino(true)
 	self:draw_current_tetromino()
 end
 
+function state.game:draw_background()
+	for y = 0, 128, 16 do
+		local t = 1/20 * (time() + y / 4)
+		circfill(64 + 32 * sin(t), y, 16 + 14 * sin(t / 3), 2)
+		t += 1/3
+		circfill(64 + 32 * sin(t), y, 16 + 14 * sin(t / 3), 1)
+		t += 1/3
+		circfill(64 + 32 * sin(t), y, 16 + 14 * sin(t / 3), 0)
+		camera()
+	end
+end
+
 function state.game:draw()
+	self:draw_background()
 	self:draw_board()
 	self:draw_hud()
 	for effect in all(self.effects) do
