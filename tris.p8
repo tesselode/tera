@@ -503,6 +503,7 @@ function state.game:enter()
 	self.lock_timer = -1
 	self.held = false
 	self.gravity_timer = self:get_gravity_interval()
+	self.shift_buffer = {}
 	self.rotation_buffer = {}
 	self.filled_lines = {}
 	self.is_spun = false
@@ -563,15 +564,21 @@ function state.game:spawn_tetromino(shape)
 end
 
 function state.game:hold()
+	if not self.current_tetromino then return end
+	if self.held_this_turn then
+		sfx(sound.illegal)
+		return
+	end
 	local previous_held = self.held
 	self.held = self.current_tetromino.shape
-	self.held_this_turn = false
+	self.held_this_turn = true
 	self:spawn_tetromino(previous_held)
 	sfx(sound.hold)
 end
 
 function state.game:place_current_tetromino(hard_drop)
 	local c = self.current_tetromino
+	if not c then return end
 	local blocks = tetrominoes[c.shape].blocks[c.orientation]
 	for relative_y = 1, #blocks do
 		local row = blocks[relative_y]
@@ -602,8 +609,8 @@ function state.game:place_current_tetromino(hard_drop)
 end
 
 function state.game:apply_gravity(soft_drop)
-	if not self.current_tetromino then return end
 	local c = self.current_tetromino
+	if not c then return end
 	if self:can_tetromino_fit(c.shape, c.x, c.y - 1, c.orientation) then
 		c.y -= 1
 		sfx(sound.fall)
@@ -631,6 +638,7 @@ function state.game:soft_drop()
 end
 
 function state.game:hard_drop()
+	if not self.current_tetromino then return end
 	self.current_tetromino.y = self:get_hard_drop_y()
 	self:place_current_tetromino(true)
 end
@@ -656,15 +664,18 @@ end
 
 function state.game:shift(dir)
 	local c = self.current_tetromino
+	if not c then return end
 	if self:can_tetromino_fit(c.shape, c.x + dir, c.y, c.orientation) then
 		c.x += dir
 		self.lock_timer = -1
-		sfx(sound.shift)
+		return true
 	end
+	return false
 end
 
-function state.game:rotate(ccw, no_sounds)
+function state.game:rotate(ccw)
 	local c = self.current_tetromino
+	if not c then return end
 	if c.shape == 'o' then return false end -- o pieces can't rotate
 	local dir = ccw and 'ccw' or 'cw'
 	local new_orientation = c.orientation
@@ -683,9 +694,6 @@ function state.game:rotate(ccw, no_sounds)
 			c.y += dy
 			c.orientation = new_orientation
 			self.lock_timer = -1
-			if not no_sounds then
-				sfx(ccw and sound.rotate_ccw or sound.rotate_cw)
-			end
 
 			-- detect spins
 			self.is_spun = true
@@ -701,7 +709,6 @@ function state.game:rotate(ccw, no_sounds)
 			return true
 		end
 	end
-	if not no_sounds then sfx(sound.illegal) end
 	return false
 end
 
@@ -782,6 +789,28 @@ function state.game:detect_filled_lines()
 	return filled_lines > 0
 end
 
+function state.game:input_shift(dir)
+	if self.current_tetromino then
+		if self:shift(dir) then sfx(sound.shift) end
+	else
+		add(self.shift_buffer, dir)
+		sfx(sound.shift)
+	end
+end
+
+function state.game:input_rotation(ccw)
+	if self.current_tetromino then
+		if self:rotate(ccw) then
+			sfx(ccw and sound.rotate_ccw or sound.rotate_cw)
+		else
+			sfx(sound.illegal)
+		end
+	else
+		add(self.rotation_buffer, ccw)
+		sfx(ccw and sound.rotate_ccw or sound.rotate_cw)
+	end
+end
+
 function state.game:update_gameplay()
 	-- update blocking animations
 	if self.line_clear_animation_timer > 0 then
@@ -797,31 +826,20 @@ function state.game:update_gameplay()
 	if self.spawn_timer ~= -1 then
 		self.spawn_timer -= 1
 		if self.spawn_timer == 0 then
-			if #self.rotation_buffer > 0 or btn(0) or btn(1) then
+			if #self.shift_buffer > 0 or #self.rotation_buffer > 0 then
 				sfx(sound.buffered)
 			end
 			self:spawn_tetromino()
 			self.spawn_timer = -1
 			for ccw in all(self.rotation_buffer) do
-				self:rotate(ccw, true)
+				self:rotate(ccw)
 				del(self.rotation_buffer, ccw)
 			end
-			if btn(0) or btn(1) then
-				local dir = btn(0) and -1 or 1
-				local c = self.current_tetromino
-				for _ = 1, board_width do
-					if self:can_tetromino_fit(c.shape, c.x + dir, c.y, c.orientation) then
-						c.x += dir
-					end
-				end
+			for dir in all(self.shift_buffer) do
+				self:shift(dir)
+				del(self.shift_buffer, dir)
 			end
 		end
-	end
-	-- buffer rotations before a mino spawns
-	if not self.current_tetromino then
-		if btnp(4) then add(self.rotation_buffer, true) end
-		if btnp(5) then add(self.rotation_buffer, false) end
-		return
 	end
 
 	-- shift controls
@@ -833,18 +851,18 @@ function state.game:update_gameplay()
 		self.shift_repeat_timer -= 1
 		if self.shift_repeat_timer == 0 then
 			self.shift_repeat_timer = self.shift_repeat_time
-			self:shift(self.shift_repeat_direction)
+			self:input_shift(self.shift_repeat_direction)
 		end
 	end
 	if btnp(0) and self.shift_repeat_direction ~= -1 then
 		self.shift_repeat_timer = self.shift_first_repeat_time
 		self.shift_repeat_direction = -1
-		self:shift(-1)
+		self:input_shift(-1)
 	end
 	if btnp(1) and self.shift_repeat_direction ~= 1 then
 		self.shift_repeat_timer = self.shift_first_repeat_time
 		self.shift_repeat_direction = 1
-		self:shift(1)
+		self:input_shift(1)
 	end
 
 	-- drop controls
@@ -854,30 +872,18 @@ function state.game:update_gameplay()
 	end
 	self.soft_drop_down_previous = btn(3)
 
-	if not self.current_tetromino then return end
-
 	-- rotation controls
 	if btnp(4) then
 		if btn(5) then
-			if not self.held_this_turn then
-				self:hold()
-				self.held_this_turn = true
-			else
-				sfx(sound.illegal)
-			end
+			self:hold()
 		else
-			self:rotate(true)
+			self:input_rotation(true)
 		end
 	elseif btnp(5) then
 		if btn(4) then
-			if not self.held_this_turn then
-				self:hold()
-				self.held_this_turn = true
-			else
-				sfx(sound.illegal)
-			end
+			self:hold()
 		else
-			self:rotate()
+			self:input_rotation(false)
 		end
 	end
 
