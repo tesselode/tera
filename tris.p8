@@ -752,7 +752,7 @@ function state.game:rotate(ccw)
 		new_orientation += 1
 		if new_orientation > 4 then new_orientation = 1 end
 	end
-	local tests = tetrominoes[c.shape].kick[new_orientation][dir]
+	local tests = tetrominoes[c.shape].kick[c.orientation][dir]
 	for test in all(tests) do
 		local dx, dy = test[1], test[2]
 		if self:can_tetromino_fit(c.shape, c.x + dx, c.y + dy, new_orientation) then
