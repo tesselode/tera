@@ -413,7 +413,7 @@ setmetatable(class.line_clear_animation, {
 -- tetris message
 
 class.line_clear_message = {
-	duration = 28,
+	duration = 40,
 }
 class.line_clear_message.__index = class.line_clear_message
 
@@ -434,7 +434,12 @@ function class.line_clear_message:update()
 end
 
 function class.line_clear_message:draw()
-	printf(self.text, self.x, self.y, 7, 'center', 0)
+	local color = self.life < 3 and 1
+	           or self.life < 7 and 5
+			   or self.life < 12 and 6
+			   or 7
+	local outline_color = self.life < 3 and 0 or 1
+	printf(self.text, self.x, self.y, color, 'center', outline_color)
 end
 
 setmetatable(class.line_clear_message, {
