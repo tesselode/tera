@@ -275,6 +275,7 @@ local state = {}
 -->8
 -- utilities
 
+-- text
 local function get_text_length(text)
 	return #text * 4
 end
@@ -296,6 +297,20 @@ local function printf(text, x, y, color, align, outline_color)
 		print(text, x - 1, y, outline_color)
 	end
 	print(text, x, y, color)
+end
+
+-- state management
+local current_state
+
+local function switch_state(state, ...)
+	local previous = current_state
+	if previous and previous.leave then
+		previous:leave(...)
+	end
+	current_state = state
+	if current_state.enter then
+		current_state:enter(previous, ...)
+	end
 end
 
 -->8
@@ -493,7 +508,7 @@ function state.game:get_lock_delay()
 	end
 end
 
-function state.game:enter()
+function state.game:enter(previous)
 	self:init_board()
 	self:init_next_queue()
 	self.score = 0
@@ -558,6 +573,9 @@ function state.game:spawn_tetromino(shape)
 	local c = self.current_tetromino
 	if self:can_tetromino_fit(c.shape, c.x, c.y - 1, c.orientation) then
 		c.y = c.y - 1
+	end
+	if not self:can_tetromino_fit(c.shape, c.x, c.y, c.orientation) then
+		switch_state(state.lose)
 	end
 	self.gravity_timer = self:get_gravity_interval()
 	self.lock_timer = -1
@@ -1058,12 +1076,23 @@ function state.game:draw()
 end
 
 -->8
+-- lose state
+
+state.lose = {}
+
+function state.lose:update()
+	state.game:update_cosmetic()
+end
+
+function state.lose:draw()
+	state.game:draw()
+end
+
+-->8
 -- main loop
 
-local current_state = state.game
-
 function _init()
-	current_state:enter()
+	switch_state(state.game)
 end
 
 function _update60()
