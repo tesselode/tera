@@ -1158,8 +1158,20 @@ function state.game:draw_background_2()
 	pal(7, 7)
 end
 
+function state.game:draw_background_3()
+	local offset = 22 + sin(time() / 120)
+	for x = -32, 128, 3 do
+		local t = (time() + x) / 33
+		for i = 1, 16 do
+			local s = sin(t + i / offset)
+			local color = i < 5 and 1 or i < 10 and 2 or 13
+			print('…', x + 16 * s, 64 + 72 * s, color)
+		end
+	end
+end
+
 function state.game:draw_background()
-	self:draw_background_2()
+	self:draw_background_3()
 end
 
 function state.game:draw()
