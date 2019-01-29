@@ -575,6 +575,8 @@ function state.game:enter(previous)
 	self.effects = {}
 	self.score_y_offset = 0
 	self.next_level_checkpoint = 100
+	self.reached_music_fadeout_1 = false
+	self.reached_music_2 = false
 	music(20)
 end
 
@@ -990,6 +992,16 @@ function state.game:update_cosmetic()
 		sfx(sound.level_up)
 		self.next_level_checkpoint += 100
 	end
+
+	-- music cues
+	if not self.reached_music_fadeout_1 and self.score >= 290 then
+		music(-1, 4000)
+		self.reached_music_fadeout_1 = true
+	end
+	if not self.reached_music_2 and self.score >= 300 then
+		music(0)
+		self.reached_music_2 = true
+	end
 end
 
 function state.game:update()
@@ -1147,6 +1159,7 @@ function state.lose:enter(previous)
 	self.black_out_height = 0
 	self.gray_out_timer = self.gray_out_animation_interval
 	self.gray_out_row = 1
+	music(-1)
 	sfx(sound.top_out)
 end
 
@@ -1349,4 +1362,3 @@ __music__
 00 12534344
 00 12134344
 02 12134344
-
