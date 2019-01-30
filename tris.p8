@@ -495,8 +495,7 @@ state.game = {
 	shift_repeat_time = 1,
 	soft_drop_gravity = 2,
 	score_bounce_amount = 4,
-	background_dissolve_square_size = 8,
-	background_dissolve_color = 0,
+	background_wipe_speed = 1,
 }
 
 function state.game:init_board()
@@ -581,14 +580,7 @@ function state.game:enter(previous)
 	self.reached_music_2 = false
 	self.reached_music_fadeout_2 = false
 	self.reached_music_3 = false
-	self.background_dissolve_mode = 'in'
-	self.background_dissolve = {}
-	for x = 1, 128 / self.background_dissolve_square_size do
-		self.background_dissolve[x] = {}
-		for y = 1, 128 / self.background_dissolve_square_size do
-			self.background_dissolve[x][y] = 0
-		end
-	end
+	self.background_wipe_height = 0
 	music(20)
 end
 
@@ -971,15 +963,6 @@ function state.game:update_gameplay()
 	self:update_gravity(btn(3))
 end
 
-function state.game:dissolve_background(mode)
-	self.background_dissolve_mode = mode
-	for x = 1, 128 / self.background_dissolve_square_size do
-		for y = 1, 128 / self.background_dissolve_square_size do
-			self.background_dissolve[x][y] = 5 + 5 * flr(rnd(16))
-		end
-	end
-end
-
 function state.game:update_cosmetic()
 	-- update visual effects
 	for effect in all(self.effects) do
@@ -1014,35 +997,33 @@ function state.game:update_cosmetic()
 		self.next_level_checkpoint += 100
 	end
 
-	-- background dissolve transition
-	for x = 1, 128 / self.background_dissolve_square_size do
-		for y = 1, 128 / self.background_dissolve_square_size do
-			if self.background_dissolve[x][y] > 0 then
-				self.background_dissolve[x][y] -= 1
-			end
-		end
-	end
-
-	-- music/background cues
+	-- music cues
 	if not self.reached_music_fadeout_1 and self.score >= 290 then
 		music(-1, 4000)
 		self.reached_music_fadeout_1 = true
-		self:dissolve_background 'out'
 	end
 	if not self.reached_music_2 and self.score >= 300 then
 		music(0)
 		self.reached_music_2 = true
-		self:dissolve_background 'in'
 	end
 	if not self.reached_music_fadeout_2 and self.score >= 690 then
 		music(-1, 4000)
 		self.reached_music_fadeout_2 = true
-		self:dissolve_background 'out'
 	end
 	if not self.reached_music_3 and self.score >= 700 then
 		music(40)
 		self.reached_music_3 = true
-		self:dissolve_background 'in'
+	end
+
+	-- background wipe transition
+	if self.score >= 290 and self.score < 300 or self.score >= 690 and self.score < 700 then
+		if self.background_wipe_height < 128 then
+			self.background_wipe_height += self.background_wipe_speed
+		end
+	else
+		if self.background_wipe_height > 0 then
+			self.background_wipe_height -= self.background_wipe_speed
+		end
 	end
 end
 
@@ -1211,18 +1192,10 @@ function state.game:draw_background()
 	else
 		self:draw_background_1()
 	end
-	local mode = self.background_dissolve_mode
-	for x = 1, 128 / self.background_dissolve_square_size do
-		for y = 1, 128 / self.background_dissolve_square_size do
-			local time = self.background_dissolve[x][y]
-			if mode == 'out' and time == 0 or mode == 'in' and time > 0 then
-				rectfill(self.background_dissolve_square_size * (x - 1),
-					self.background_dissolve_square_size * (y - 1),
-					self.background_dissolve_square_size * x,
-					self.background_dissolve_square_size * y,
-					self.background_dissolve_color)
-			end
-		end
+	if self.score >= 290 and self.score < 300 or self.score >= 690 and self.score < 700 then
+		rectfill(0, 0, 128, self.background_wipe_height, 0)
+	else
+		rectfill(0, 128 - self.background_wipe_height, 128, 128, 0)
 	end
 end
 
