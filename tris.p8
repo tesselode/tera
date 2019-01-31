@@ -529,10 +529,8 @@ end
 
 function state.game:get_spawn_delay()
 	return self.score < 1200 and 15
-	    or self.score < 1300 and 12
-		or self.score < 1400 and 10
-		or self.score < 1500 and 8
-		or 5
+	    or self.score < 2200 and 15 - flr((self.score - 1100) / 100)
+	    or 5
 end
 
 function state.game:get_gravity_interval()
@@ -549,11 +547,14 @@ function state.game:get_gravity_interval()
 end
 
 function state.game:get_lock_delay()
-	if     self.score < 800 then return 30
-	elseif self.score < 900 then return 25
-	elseif self.score < 1000 then return 20
-	elseif self.score < 1100 then return 17
-	else                         return 15
+	if     self.score < 800  then return 30
+	elseif self.score < 900  then return 28
+	elseif self.score < 1000 then return 26
+	elseif self.score < 1100 then return 24
+	elseif self.score < 1200 then return 22
+	elseif self.score < 1300 then return 20
+	elseif self.score < 1400 then return 18
+	else                          return 16
 	end
 end
 
@@ -1522,3 +1523,4 @@ __music__
 00 16174344
 00 18154344
 02 18164344
+
