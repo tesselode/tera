@@ -315,6 +315,20 @@ local function switch_state(state, ...)
 	end
 end
 
+-- classes
+local function new_class(t)
+	local class = t or {}
+	class.__index = class
+	setmetatable(class, {
+		__call = function(self, ...)
+			local instance = setmetatable({}, class)
+			if instance.new then instance:new(...) end
+			return instance
+		end,
+	})
+	return class
+end
+
 -->8
 -- classes
 
@@ -322,8 +336,7 @@ local class = {}
 
 -- particles
 
-class.particle = {}
-class.particle.__index = class.particle
+class.particle = new_class()
 
 function class.particle:new(x, y, color, life_multiplier)
 	self.x = x
@@ -352,21 +365,12 @@ function class.particle:draw()
 	pset(self.x, self.y, self.color)
 end
 
-setmetatable(class.particle, {
-	__call = function(self, ...)
-		local particle = setmetatable({}, class.particle)
-		particle:new(...)
-		return particle
-	end,
-})
-
 -- line clear animation
 
-class.line_clear_animation = {
+class.line_clear_animation = new_class {
 	duration = 28,
 	particle_spawn_interval = 2,
 }
-class.line_clear_animation.__index = class.line_clear_animation
 
 function class.line_clear_animation:new(x, y)
 	self.x = x
@@ -403,20 +407,11 @@ function class.line_clear_animation:draw()
 		self.y + block_size, color)
 end
 
-setmetatable(class.line_clear_animation, {
-	__call = function(self, ...)
-		local animation = setmetatable({}, class.line_clear_animation)
-		animation:new(...)
-		return animation
-	end,
-})
-
 -- tetris message
 
-class.line_clear_message = {
+class.line_clear_message = new_class {
 	duration = 40,
 }
-class.line_clear_message.__index = class.line_clear_message
 
 function class.line_clear_message:new(text, x, y)
 	self.text = text
@@ -443,20 +438,11 @@ function class.line_clear_message:draw()
 	printf(self.text, self.x, self.y, color, 'center', outline_color)
 end
 
-setmetatable(class.line_clear_message, {
-	__call = function(self, ...)
-		local message = setmetatable({}, class.line_clear_message)
-		message:new(...)
-		return message
-	end,
-})
-
 -- level up message
 
-class.level_up_message = {
+class.level_up_message = new_class {
 	duration = 180,
 }
-class.level_up_message.__index = class.level_up_message
 
 function class.level_up_message:new()
 	self.life = self.duration
@@ -476,14 +462,6 @@ function class.level_up_message:draw()
 	printf('level up', 8, 6, color, 'center', 0)
 	camera()
 end
-
-setmetatable(class.level_up_message, {
-	__call = function(self, ...)
-		local message = setmetatable({}, class.level_up_message)
-		message:new(...)
-		return message
-	end,
-})
 
 -->8
 -- gameplay state
