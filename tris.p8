@@ -38,28 +38,28 @@ local tetrominoes = {
 	i = {
 		blocks = {
 			{
-				{0, 0, 0, 0},
-				{1, 1, 1, 1},
-				{0, 0, 0, 0},
-				{0, 0, 0, 0},
+				'0000',
+				'1111',
+				'0000',
+				'0000',
 			},
 			{
-				{0, 0, 1, 0},
-				{0, 0, 1, 0},
-				{0, 0, 1, 0},
-				{0, 0, 1, 0},
+				'0010',
+				'0010',
+				'0010',
+				'0010',
 			},
 			{
-				{0, 0, 0, 0},
-				{0, 0, 0, 0},
-				{1, 1, 1, 1},
-				{0, 0, 0, 0},
+				'0000',
+				'0000',
+				'1111',
+				'0000',
 			},
 			{
-				{0, 1, 0, 0},
-				{0, 1, 0, 0},
-				{0, 1, 0, 0},
-				{0, 1, 0, 0},
+				'0100',
+				'0100',
+				'0100',
+				'0100',
 			},
 		},
 		--[[
@@ -93,24 +93,24 @@ local tetrominoes = {
 	l = {
 		blocks = {
 			{
-				{1, 0, 0},
-				{1, 1, 1},
-				{0, 0, 0},
+				'100',
+				'111',
+				'000',
 			},
 			{
-				{0, 1, 1},
-				{0, 1, 0},
-				{0, 1, 0},
+				'011',
+				'010',
+				'010',
 			},
 			{
-				{0, 0, 0},
-				{1, 1, 1},
-				{0, 0, 1},
+				'000',
+				'111',
+				'001',
 			},
 			{
-				{0, 1, 0},
-				{0, 1, 0},
-				{1, 1, 0},
+				'010',
+				'010',
+				'110',
 			},
 		},
 		kick = main_kick_data,
@@ -121,24 +121,24 @@ local tetrominoes = {
 	j = {
 		blocks = {
 			{
-				{0, 0, 1},
-				{1, 1, 1},
-				{0, 0, 0},
+				'001',
+				'111',
+				'000',
 			},
 			{
-				{0, 1, 0},
-				{0, 1, 0},
-				{0, 1, 1},
+				'010',
+				'010',
+				'011',
 			},
 			{
-				{0, 0, 0},
-				{1, 1, 1},
-				{1, 0, 0},
+				'000',
+				'111',
+				'100',
 			},
 			{
-				{1, 1, 0},
-				{0, 1, 0},
-				{0, 1, 0},
+				'110',
+				'010',
+				'010',
 			},
 		},
 		kick = main_kick_data,
@@ -149,8 +149,8 @@ local tetrominoes = {
 	o = {
 		blocks = {
 			{
-				{1, 1},
-				{1, 1},
+				'11',
+				'11',
 			},
 		},
 		sprite = 4,
@@ -161,24 +161,24 @@ local tetrominoes = {
 	s = {
 		blocks = {
 			{
-				{0, 1, 1},
-				{1, 1, 0},
-				{0, 0, 0},
+				'011',
+				'110',
+				'000',
 			},
 			{
-				{0, 1, 0},
-				{0, 1, 1},
-				{0, 0, 1},
+				'010',
+				'011',
+				'001',
 			},
 			{
-				{0, 0, 0},
-				{0, 1, 1},
-				{1, 1, 0},
+				'000',
+				'011',
+				'110',
 			},
 			{
-				{1, 0, 0},
-				{1, 1, 0},
-				{0, 1, 0},
+				'100',
+				'110',
+				'010',
 			},
 		},
 		kick = main_kick_data,
@@ -189,24 +189,24 @@ local tetrominoes = {
 	z = {
 		blocks = {
 			{
-				{1, 1, 0},
-				{0, 1, 1},
-				{0, 0, 0},
+				'110',
+				'011',
+				'000',
 			},
 			{
-				{0, 0, 1},
-				{0, 1, 1},
-				{0, 1, 0},
+				'001',
+				'011',
+				'010',
 			},
 			{
-				{0, 0, 0},
-				{1, 1, 0},
-				{0, 1, 1},
+				'000',
+				'110',
+				'011',
 			},
 			{
-				{0, 1, 0},
-				{1, 1, 0},
-				{1, 0, 0},
+				'010',
+				'110',
+				'100',
 			},
 		},
 		kick = main_kick_data,
@@ -217,24 +217,24 @@ local tetrominoes = {
 	t = {
 		blocks = {
 			{
-				{0, 1, 0},
-				{1, 1, 1},
-				{0, 0, 0},
+				'010',
+				'111',
+				'000',
 			},
 			{
-				{0, 1, 0},
-				{0, 1, 1},
-				{0, 1, 0},
+				'010',
+				'011',
+				'010',
 			},
 			{
-				{0, 0, 0},
-				{1, 1, 1},
-				{0, 1, 0},
+				'000',
+				'111',
+				'010',
 			},
 			{
-				{0, 1, 0},
-				{1, 1, 0},
-				{0, 1, 0},
+				'010',
+				'110',
+				'010',
 			},
 		},
 		kick = main_kick_data,
@@ -597,7 +597,7 @@ function state.game:can_tetromino_fit(shape, x, y, orientation)
 	for relative_y = 1, #blocks do
 		local row = blocks[relative_y]
 		for relative_x = 1, #row do
-			if row[relative_x] == 1 then
+			if sub(row, relative_x, relative_x) == '1' then
 				if not self:is_block_free(x + relative_x - 1, y + relative_y - 1) then
 					return false
 				end
@@ -657,7 +657,7 @@ function state.game:place_current_tetromino(hard_drop, top_out)
 	for relative_y = 1, #blocks do
 		local row = blocks[relative_y]
 		for relative_x = 1, #row do
-			if row[relative_x] == 1 then
+			if sub(row, relative_x, relative_x) == '1' then
 				local board_x = c.x + relative_x - 1
 				local board_y = c.y + relative_y - 1
 				self.board[board_x][board_y] = c.shape
@@ -1096,7 +1096,7 @@ function state.game:draw_tetromino(shape, x, y, orientation, ghost, centered)
 		for relative_x = 1, #row do
 			local board_x = x + relative_x - 1
 			local board_y = y + relative_y - 1
-			if row[relative_x] == 1 then
+			if sub(row, relative_x, relative_x) == '1' then
 				self:draw_block(board_x, board_y, shape, ghost)
 			end
 		end
@@ -1207,6 +1207,7 @@ function state.game:draw()
 	for effect in all(self.effects) do
 		effect:draw()
 	end
+	print(stat(1) * 200, 0, 0, 7)
 end
 
 -->8
