@@ -575,6 +575,14 @@ function state.game:enter(previous)
 	self.is_spun = false
 	self.line_clear_animation_timer = 0
 
+	-- stats
+	self.moves = 0
+	self.singles = 0
+	self.doubles = 0
+	self.triples = 0
+	self.tetrises = 0
+	self.spins = 0
+
 	-- cosmetic
 	self.play_tetromino_sound = true
 	self.effects = {}
@@ -671,7 +679,10 @@ function state.game:place_current_tetromino(hard_drop, top_out)
 			end
 		end
 	end
-	if not top_out then self.score += 1 end
+	if not top_out then
+		self.score += 1
+		self.moves += 1
+	end
 	self:detect_filled_lines()
 	self.current_tetromino = nil	
 	self.held_this_turn = false
@@ -828,15 +839,18 @@ function state.game:detect_filled_lines()
 		if filled_lines >= 4 then
 			if self.is_spun then
 				self.score += 12
+				self.spins += 1
 			else
 				self.score += 7
 			end
+			self.tetrises += 1
 			local l = self.filled_lines
 			local y = (l[1] + l[2] + l[3] + l[4]) / 4
 			add(self.effects, class.line_clear_message('tetris', self:board_to_screen(board_width / 2 + 1, y)))
 			sfx(sound.tetris)
 		elseif filled_lines >= 0 then
 			if self.is_spun then
+				self.spins += 1
 				local y = 0
 				for l in all(self.filled_lines) do y += l end
 				y /= filled_lines
@@ -844,6 +858,7 @@ function state.game:detect_filled_lines()
 				sfx(sound.spin_line_clear)
 			end
 			if filled_lines == 3 then
+				self.triples += 1
 				if self.is_spun then
 					self.score += 8
 				else
@@ -851,6 +866,7 @@ function state.game:detect_filled_lines()
 				end
 				sfx(sound.triple)
 			elseif filled_lines == 2 then
+				self.doubles += 1
 				if self.is_spun then
 					self.score += 4
 				else
@@ -858,6 +874,7 @@ function state.game:detect_filled_lines()
 				end
 				sfx(sound.double)
 			elseif filled_lines == 1 then
+				self.singles += 1
 				if self.is_spun then
 					self.score += 2
 				else
@@ -1228,6 +1245,7 @@ function state.lose:enter(previous)
 	self.black_out_height = 0
 	self.gray_out_timer = self.gray_out_animation_interval
 	self.gray_out_row = 1
+	self.time = 0
 	music(-1)
 	sfx(sound.top_out)
 end
@@ -1247,9 +1265,18 @@ function state.lose:update()
 			self.gray_out_row += 1
 		end
 	end
+	if self.time < 10000 then self.time += 1 end
+	if self.time == 180 or self.time == 200 or self.time == 220
+			or self.time == 240 or self.time == 260 or self.time == 280 then
+		sfx(sound.rotate_ccw)
+	end
+	if self.time == 320 then
+		sfx(sound.tetris)
+	end
 end
 
 function state.lose:draw()
+	-- board
 	state.game:draw_background()
 	rectfill(0, 0, 128, self.black_out_height, 7)
 	rectfill(0, 0, 128, self.black_out_height - 8, 6)
@@ -1261,6 +1288,44 @@ function state.lose:draw()
 	for effect in all(state.game.effects) do
 		effect:draw()
 	end
+
+	-- results
+	if self.time > 180 then
+		camera(0, -max(184 - self.time, 0))
+		printf('moves', 38, 32, 6, 'left', 0)
+		draw_fancy_number(state.game.moves, 90, 31, false, true)
+	end
+	if self.time > 200 then
+		camera(0, -max(204 - self.time, 0))
+		printf('singles', 38, 40, 6, 'left', 0)
+		draw_fancy_number(state.game.singles, 90, 39, false, true)
+	end
+	if self.time > 220 then
+		camera(0, -max(224 - self.time, 0))
+		printf('doubles', 38, 48, 6, 'left', 0)
+		draw_fancy_number(state.game.doubles, 90, 47, false, true)
+	end
+	if self.time > 240 then
+		camera(0, -max(244 - self.time, 0))
+		printf('triples', 38, 56, 6, 'left', 0)
+		draw_fancy_number(state.game.triples, 90, 55, false, true)
+	end
+	if self.time > 260 then
+		camera(0, -max(264 - self.time, 0))
+		printf('tetrises', 38, 64, 6, 'left', 0)
+		draw_fancy_number(state.game.tetrises, 90, 63, false, true)
+	end
+	if self.time > 280 then
+		camera(0, -max(284 - self.time, 0))
+		printf('spins', 38, 72, 6, 'left', 0)
+		draw_fancy_number(state.game.spins, 90, 71, false, true)
+	end
+	if self.time > 320 then
+		camera(0, -max(324 - self.time, 0))
+		printf('score', 38, 88, 6, 'left', 0)
+		draw_fancy_number(state.game.score, 90, 87)
+	end
+	camera()
 end
 
 -->8
