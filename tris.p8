@@ -480,7 +480,7 @@ function class.level_up_message:update()
 end
 
 function class.level_up_message:draw()
-	camera(-8, -96)
+	camera(-8, -108)
 	sspr(112, 0, 16, 16, 0, self.arrow_y_offset)
 	local color = time() % 1 > .5 and 7 or 12
 	printf('level up', 8, 6, color, 'center', 0)
