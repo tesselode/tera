@@ -1246,6 +1246,7 @@ function state.lose:enter(previous)
 	self.black_out_height = 0
 	self.gray_out_timer = self.gray_out_animation_interval
 	self.gray_out_row = 1
+	self.results_background_height = 0
 	self.time = 0
 	music(-1)
 	sfx(sound.top_out)
@@ -1267,6 +1268,12 @@ function state.lose:update()
 		end
 	end
 	if self.time < 10000 then self.time += 1 end
+	if self.time > 140 and self.results_background_height < visible_board_height * block_size then
+		self.results_background_height += 6
+		if self.results_background_height > visible_board_height * block_size then
+			self.results_background_height = visible_board_height * block_size
+		end
+	end
 	if self.time == 180 or self.time == 200 or self.time == 220
 			or self.time == 240 or self.time == 260 or self.time == 280 then
 		sfx(sound.rotate_ccw)
@@ -1291,40 +1298,45 @@ function state.lose:draw()
 	end
 
 	-- results
+	if self.results_background_height > 0 then
+		rectfill(state.game.board_draw_x + 1, state.game.board_draw_y + 1,
+			state.game.board_draw_x + board_width * block_size - 1,
+			state.game.board_draw_y + self.results_background_height - 1, 0)
+	end
 	if self.time > 180 then
 		camera(0, -max(184 - self.time, 0))
-		printf('moves', 38, 32, 6, 'left', 0)
-		draw_fancy_number(state.game.moves, 90, 31, false, true)
+		printf('moves', 38, 16, 6, 'left', 0)
+		draw_fancy_number(state.game.moves, 90, 15, false, true)
 	end
 	if self.time > 200 then
 		camera(0, -max(204 - self.time, 0))
-		printf('singles', 38, 40, 6, 'left', 0)
-		draw_fancy_number(state.game.singles, 90, 39, false, true)
+		printf('singles', 38, 24, 6, 'left', 0)
+		draw_fancy_number(state.game.singles, 90, 23, false, true)
 	end
 	if self.time > 220 then
 		camera(0, -max(224 - self.time, 0))
-		printf('doubles', 38, 48, 6, 'left', 0)
-		draw_fancy_number(state.game.doubles, 90, 47, false, true)
+		printf('doubles', 38, 32, 6, 'left', 0)
+		draw_fancy_number(state.game.doubles, 90, 31, false, true)
 	end
 	if self.time > 240 then
 		camera(0, -max(244 - self.time, 0))
-		printf('triples', 38, 56, 6, 'left', 0)
-		draw_fancy_number(state.game.triples, 90, 55, false, true)
+		printf('triples', 38, 40, 6, 'left', 0)
+		draw_fancy_number(state.game.triples, 90, 39, false, true)
 	end
 	if self.time > 260 then
 		camera(0, -max(264 - self.time, 0))
-		printf('tetrises', 38, 64, 6, 'left', 0)
-		draw_fancy_number(state.game.tetrises, 90, 63, false, true)
+		printf('teras', 38, 48, 6, 'left', 0)
+		draw_fancy_number(state.game.tetrises, 90, 47, false, true)
 	end
 	if self.time > 280 then
 		camera(0, -max(284 - self.time, 0))
-		printf('spins', 38, 72, 6, 'left', 0)
-		draw_fancy_number(state.game.spins, 90, 71, false, true)
+		printf('spins', 38, 56, 6, 'left', 0)
+		draw_fancy_number(state.game.spins, 90, 55, false, true)
 	end
 	if self.time > 320 then
 		camera(0, -max(324 - self.time, 0))
-		printf('score', 38, 88, 6, 'left', 0)
-		draw_fancy_number(state.game.score, 90, 87)
+		printf('score', 38, 72, 7, 'left', 0)
+		draw_fancy_number(state.game.score, 90, 71)
 	end
 	camera()
 end
@@ -1523,4 +1535,3 @@ __music__
 00 16174344
 00 18154344
 02 18164344
-
