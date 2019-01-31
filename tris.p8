@@ -838,10 +838,10 @@ function state.game:detect_filled_lines()
 		self.line_clear_animation_timer = class.line_clear_animation.duration
 		if filled_lines >= 4 then
 			if self.is_spun then
-				self.score += 12
+				self.score += 20
 				self.spins += 1
 			else
-				self.score += 7
+				self.score += 15
 			end
 			self.tetrises += 1
 			local l = self.filled_lines
@@ -860,25 +860,25 @@ function state.game:detect_filled_lines()
 			if filled_lines == 3 then
 				self.triples += 1
 				if self.is_spun then
-					self.score += 8
+					self.score += 15
 				else
-					self.score += 4
+					self.score += 10
 				end
 				sfx(sound.triple)
 			elseif filled_lines == 2 then
 				self.doubles += 1
 				if self.is_spun then
-					self.score += 4
+					self.score += 10
 				else
-					self.score += 2
+					self.score += 6
 				end
 				sfx(sound.double)
 			elseif filled_lines == 1 then
 				self.singles += 1
 				if self.is_spun then
-					self.score += 2
+					self.score += 5
 				else
-					self.score += 1
+					self.score += 3
 				end
 				sfx(sound.single)
 			end
