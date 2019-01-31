@@ -1225,6 +1225,7 @@ function state.game:draw_background()
 end
 
 function state.game:draw()
+	cls()
 	self:draw_background()
 	self:draw_board()
 	self:draw_hud()
@@ -1284,6 +1285,8 @@ function state.lose:update()
 end
 
 function state.lose:draw()
+	cls()
+
 	-- board
 	state.game:draw_background()
 	rectfill(0, 0, 128, self.black_out_height, 7)
@@ -1342,10 +1345,55 @@ function state.lose:draw()
 end
 
 -->8
+-- title screen
+
+state.title = {}
+
+function state.title:enter()
+	cls()
+	self.rectangles = {}
+	for i = 1, 20 do
+		add(self.rectangles, {
+			x = rnd(128),
+			y = rnd(48),
+			w = 48,
+			h = 8,
+			vx = -4 - rnd(4),
+			c = rnd() > .5 and 1 or 0,
+		})
+	end
+end
+
+function state.title:update()
+	for r in all(self.rectangles) do
+		r.x += r.vx
+		if r.x + r.w < 0 then
+			r.x = 128
+			r.y = rnd(48)
+			r.vx = -4 - rnd(4)
+			r.c = rnd() > .5 and 1 or 0
+		end
+	end
+end
+
+function state.title:draw()
+	camera(0, -24)
+	for r in all(self.rectangles) do
+		rectfill(r.x, r.y, r.x + r.w, r.y + r.h, r.c)
+	end
+	camera(16 * sin(time() / 12) - 4, 4 * cos(time() / 17) - 32)
+	sspr(16, 32, 32, 16, 12, 4, 64, 32)
+	printf('mind', 80, 10, 7, 'left', 0)
+	printf('over', 80, 18, 7, 'left', 0)
+	printf('matter', 80, 26, 15, 'left', 0)
+	camera()
+end
+
+-->8
 -- main loop
 
 function _init()
-	switch_state(state.game)
+	switch_state(state.title)
 end
 
 function _update60()
@@ -1355,7 +1403,6 @@ function _update60()
 end
 
 function _draw()
-	cls()
 	if current_state.draw then
 		current_state:draw()
 	end
@@ -1535,4 +1582,3 @@ __music__
 00 16174344
 00 18154344
 02 18164344
-
