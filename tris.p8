@@ -539,8 +539,9 @@ function state.game:get_gravity_interval()
 	elseif self.score < 300 then return 10
 	elseif self.score < 400 then return 7
 	elseif self.score < 500 then return 4
-	elseif self.score < 600 then return 1
-	elseif self.score < 700 then return .5
+	elseif self.score < 600 then return 2
+	elseif self.score < 700 then return 1
+	elseif self.score < 800 then return .5
 	else                         return .1
 	end
 end
