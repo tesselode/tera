@@ -801,7 +801,12 @@ function state.game:detect_filled_lines()
 	if filled_lines > 0 then
 		self.line_clear_animation_timer = class.line_clear_animation.duration
 		if filled_lines >= 4 then
-			self.score += 7
+			if self.is_spun then
+				self.score += 12
+				sfx(sound.spin_line_clear)
+			else
+				self.score += 7
+			end
 			local l = self.filled_lines
 			local y = (l[1] + l[2] + l[3] + l[4]) / 4
 			add(self.effects, class.line_clear_message('tetris', self:board_to_screen(board_width / 2 + 1, y)))
