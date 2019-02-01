@@ -1427,7 +1427,8 @@ function state.title:enter()
 	self:init_main_menu()
 
 	-- cosmetic
-	cls(13)
+	cls(0)
+	self.higlight_animation_time = 0
 	self.transitioning = false
 	self.transition_progress = 0
 	self.rectangles = {}
@@ -1438,7 +1439,7 @@ function state.title:enter()
 			w = 48,
 			h = 8,
 			vx = -4 - rnd(4),
-			c = rnd() > .5 and 13 or 6,
+			c = rnd() > .5 and 0 or 1,
 		})
 	end
 end
@@ -1451,28 +1452,33 @@ function state.title:update()
 			if self.selected_menu_option <= 0 then
 				self.selected_menu_option = #self.menu_options
 			end
+			self.higlight_animation_time = 0
 		end
 		if btnp(3) then
 			self.selected_menu_option += 1
 			if self.selected_menu_option > #self.menu_options then
 				self.selected_menu_option = 1
 			end
+			self.higlight_animation_time = 0
 		end
 		if btnp(4) then
 			if self.menu_options[self.selected_menu_option].confirm then
 				self.menu_options[self.selected_menu_option].confirm()
 			end
+			self.higlight_animation_time = 0
 		end
 	end
 
 	-- cosmetic
+	self.higlight_animation_time += 1/60
+
 	for r in all(self.rectangles) do
 		r.x += r.vx
 		if r.x + r.w < 0 then
 			r.x = 128
 			r.y = rnd(48)
 			r.vx = -4 - rnd(4)
-			r.c = rnd() > .5 and 13 or 6
+			r.c = rnd() > .5 and 0 or 1
 		end
 	end
 
@@ -1498,12 +1504,18 @@ function state.title:draw()
 	printf('hi score: 0', 64, 40, 14, 'center', 2)
 	camera()
 
-	rectfill(0, 84, 128, 128, 2)
+	rectfill(0, 84, 128, 128, 0)
 	for i = 1, #self.menu_options do
 		local text = self.menu_options[i].text()
 		local y = 92 + 8 * (i - 1)
-		local color = i == self.selected_menu_option and 7 or 5
-		printf(text, 64, y, color, 'center', 0)
+		if i == self.selected_menu_option then
+			local phase = cos(self.higlight_animation_time / 2)
+			local color = phase > .25 and 7 or phase > -.25 and 15 or 14
+			printf(text, 64, y + 1, 1, 'center')
+			printf(text, 64, y, color, 'center')
+		else
+			printf(text, 64, y + 1, 5, 'center')
+		end
 	end
 
 	if self.transitioning then
