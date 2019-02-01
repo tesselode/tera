@@ -848,7 +848,7 @@ function state.game:detect_filled_lines()
 			self.tetrises += 1
 			local l = self.filled_lines
 			local y = (l[1] + l[2] + l[3] + l[4]) / 4
-			add(self.effects, class.line_clear_message('tetris', self:board_to_screen(board_width / 2 + 1, y)))
+			add(self.effects, class.line_clear_message('tera', self:board_to_screen(board_width / 2 + 1, y)))
 			sfx(sound.tetris)
 		elseif filled_lines >= 0 then
 			if self.is_spun then
