@@ -279,8 +279,21 @@ local state = {}
 -- utilities
 
 -- text
+local glyphs = '…∧░➡️⧗▤⬆️☉🅾️◆█★⬇️✽●♥웃⌂⬅️▥❎🐱ˇ▒♪😐'
+
 local function get_text_length(text)
-	return #text * 4
+	local length = 0
+	for i = 1, #text do
+		local is_glyph = false
+		for j = 1, #glyphs do
+			if sub(text, i, i) == sub(glyphs, j, j) then
+				is_glyph = true
+				break
+			end
+		end
+		length += (is_glyph and 8 or 4)
+	end
+	return length
 end
 
 local function printf(text, x, y, color, align, outline_color)
