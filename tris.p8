@@ -1349,8 +1349,45 @@ end
 
 state.title = {}
 
+function state.title:init_main_menu()
+	self.menu_options = {
+		{
+			text = function() return 'play' end,
+		},
+		{
+			text = function() return 'options' end,
+			confirm = function()
+				self:init_options_menu()
+			end,
+		},
+	}
+	self.selected_menu_option = 1
+end
+
+function state.title:init_options_menu()
+	self.menu_options = {
+		{
+			text = function() return '⬅️ music: auto ➡️' end,
+		},
+		{
+			text = function() return '⬅️ background: auto ➡️' end,
+		},
+		{
+			text = function() return '⬅️ hard drop: normal ➡️' end,
+		},
+		{
+			text = function() return 'back' end,
+			confirm = function()
+				self:init_main_menu()
+			end,
+		},
+	}
+	self.selected_menu_option = 1
+end
+
 function state.title:enter()
-	cls()
+	cls(13)
+	self:init_main_menu()
 	self.rectangles = {}
 	for i = 1, 20 do
 		add(self.rectangles, {
@@ -1359,34 +1396,63 @@ function state.title:enter()
 			w = 48,
 			h = 8,
 			vx = -4 - rnd(4),
-			c = rnd() > .5 and 1 or 0,
+			c = rnd() > .5 and 13 or 6,
 		})
 	end
 end
 
 function state.title:update()
+	if btnp(2) then
+		self.selected_menu_option -= 1
+		if self.selected_menu_option <= 0 then
+			self.selected_menu_option = #self.menu_options
+		end
+	end
+	if btnp(3) then
+		self.selected_menu_option += 1
+		if self.selected_menu_option > #self.menu_options then
+			self.selected_menu_option = 1
+		end
+	end
+	if btnp(4) then
+		if self.menu_options[self.selected_menu_option].confirm then
+			self.menu_options[self.selected_menu_option].confirm()
+		end
+	end
+
+	-- cosmetic
 	for r in all(self.rectangles) do
 		r.x += r.vx
 		if r.x + r.w < 0 then
 			r.x = 128
 			r.y = rnd(48)
 			r.vx = -4 - rnd(4)
-			r.c = rnd() > .5 and 1 or 0
+			r.c = rnd() > .5 and 13 or 6
 		end
 	end
 end
 
 function state.title:draw()
-	camera(0, -24)
+	camera(0, -20)
 	for r in all(self.rectangles) do
 		rectfill(r.x, r.y, r.x + r.w, r.y + r.h, r.c)
 	end
-	camera(16 * sin(time() / 12) - 4, 4 * cos(time() / 17) - 32)
+	camera(16 * sin(time() / 12) - 4, 4 * cos(time() / 17) - 20)
 	sspr(16, 32, 32, 16, 12, 4, 64, 32)
-	printf('mind', 80, 10, 7, 'left', 0)
-	printf('over', 80, 18, 7, 'left', 0)
-	printf('matter', 80, 26, 15, 'left', 0)
+	printf('mind', 80, 10, 7, 'left', 2)
+	printf('over', 80, 18, 7, 'left', 2)
+	printf('matter', 80, 26, 15, 'left', 2)
+	camera(-16 * sin(time() / 12) - 4, 4 * cos(time() / 17) - 20)
+	printf('hi score: 0', 64, 40, 14, 'center', 2)
 	camera()
+
+	rectfill(0, 84, 128, 128, 2)
+	for i = 1, #self.menu_options do
+		local text = self.menu_options[i].text()
+		local y = 92 + 8 * (i - 1)
+		local color = i == self.selected_menu_option and 7 or 5
+		printf(text, 64, y, color, 'center', 0)
+	end
 end
 
 -->8
