@@ -1026,7 +1026,7 @@ function state.game:update_cosmetic()
 	end
 
 	-- music cues
-	if not self.reached_music_fadeout_1 and self.score >= 290 then
+	if not self.reached_music_fadeout_1 and self.score >= 270 then
 		music(-1, 4000)
 		self.reached_music_fadeout_1 = true
 	end
@@ -1034,7 +1034,7 @@ function state.game:update_cosmetic()
 		music(0)
 		self.reached_music_2 = true
 	end
-	if not self.reached_music_fadeout_2 and self.score >= 690 then
+	if not self.reached_music_fadeout_2 and self.score >= 670 then
 		music(-1, 4000)
 		self.reached_music_fadeout_2 = true
 	end
@@ -1044,7 +1044,7 @@ function state.game:update_cosmetic()
 	end
 
 	-- background wipe transition
-	if self.score >= 290 and self.score < 300 or self.score >= 690 and self.score < 700 then
+	if self.score >= 270 and self.score < 300 or self.score >= 670 and self.score < 700 then
 		if self.background_wipe_height < 128 then
 			self.background_wipe_height += self.background_wipe_speed
 		end
@@ -1245,7 +1245,7 @@ function state.game:draw_background()
 	else
 		self:draw_background_1()
 	end
-	if self.score >= 290 and self.score < 300 or self.score >= 690 and self.score < 700 then
+	if self.score >= 270 and self.score < 300 or self.score >= 670 and self.score < 700 then
 		rectfill(0, 0, 128, self.background_wipe_height, 0)
 	else
 		rectfill(0, 128 - self.background_wipe_height, 128, 128, 0)
@@ -1708,4 +1708,3 @@ __music__
 00 16174344
 00 18154344
 02 18164344
-
