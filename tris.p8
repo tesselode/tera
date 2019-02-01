@@ -1,6 +1,11 @@
 pico-8 cartridge // http://www.pico-8.com
 version 16
 __lua__
+-- tera: mind over matter
+-- tesselode
+
+cartdata 'tesselode_tera'
+
 -- resources --
 
 -- tetromino data --
@@ -266,6 +271,16 @@ sound = {
 	ready = 39,
 }
 
+-- save data locations
+save = {
+	high_score = 0,
+	unlocked_skin_2 = 8,
+	unlocked_skin_3 = 9,
+	background = 32,
+	music = 33,
+	hard_drop = 34,
+}
+
 -- constants --
 local board_width = 10
 local board_height = 40
@@ -284,9 +299,10 @@ local glyphs = '…∧░➡️⧗▤⬆️☉🅾️◆█★⬇️✽●♥웃
 local function get_text_length(text)
 	local length = 0
 	for i = 1, #text do
+		local character = sub(text, i, i)
 		local is_glyph = false
 		for j = 1, #glyphs do
-			if sub(text, i, i) == sub(glyphs, j, j) then
+			if character == sub(glyphs, j, j) then
 				is_glyph = true
 				break
 			end
@@ -1418,10 +1434,21 @@ end
 function state.title:init_options_menu()
 	self.menu_options = {
 		{
-			text = function() return '⬅️ music: auto ➡️' end,
+			text = function()
+				local background = dget(save.background)
+				if background == 0 then
+					return '⬅️ background: auto ➡️'
+				elseif background == 1 then
+					return '⬅️ background: chill ➡️'
+				elseif background == 2 then
+					return '⬅️ background: slippy ➡️'
+				elseif background == 3 then
+					return '⬅️ background: wavy ➡️'
+				end
+			end,
 		},
 		{
-			text = function() return '⬅️ background: auto ➡️' end,
+			text = function() return '⬅️ music: auto ➡️' end,
 		},
 		{
 			text = function() return '⬅️ hard drop: normal ➡️' end,
