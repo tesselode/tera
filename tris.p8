@@ -575,6 +575,7 @@ function state.game:enter(previous)
 	self.filled_lines = {}
 	self.is_spun = false
 	self.line_clear_animation_timer = 0
+	self.countdown = 80
 
 	-- stats
 	self.moves = 0
@@ -585,7 +586,7 @@ function state.game:enter(previous)
 	self.spins = 0
 
 	-- cosmetic
-	self.play_tetromino_sound = true
+	self.play_tetromino_sound = false
 	self.effects = {}
 	self.score_y_offset = 0
 	self.next_level_checkpoint = 100
@@ -594,7 +595,7 @@ function state.game:enter(previous)
 	self.reached_music_fadeout_2 = false
 	self.reached_music_3 = false
 	self.background_wipe_height = 0
-	music(20)
+	self.enter_transition_progress = 0
 end
 
 function state.game:is_block_free(x, y)
@@ -1051,12 +1052,26 @@ function state.game:update_cosmetic()
 			self.background_wipe_height -= self.background_wipe_speed
 		end
 	end
+
+	-- enter transition
+	if self.enter_transition_progress < 1 then
+		self.enter_transition_progress += 1/15
+	end
 end
 
 function state.game:update()
 	self:update_cosmetic()
-	self:update_gameplay()
-	self.time += 1/60
+	if self.countdown > -100 then
+		self.countdown -= 1
+		if self.countdown == 0 then
+			self.play_tetromino_sound = true
+			music(20)
+		end
+	end
+	if self.countdown <= 0 then
+		self:update_gameplay()
+		self.time += 1/60
+	end
 end
 
 function state.game:board_to_screen(board_x, board_y)
@@ -1160,6 +1175,15 @@ function state.game:draw_hud()
 
 	-- time
 	draw_fancy_number(flr(self.time), 27, 88, false, true)
+
+	-- countdown
+	if self.countdown > 0 and self.countdown < 60 then
+		printf('ready...', 64, 64, 7, 'center', 0)
+		rectfill(40, 72, 88, 76, 0)
+		rectfill(40, 72, 40 + 48 * sqrt((60 - self.countdown) / 60), 76, 7)
+	elseif self.countdown <= 0 and self.countdown > -30 then
+		printf('go!', 64, 64 + 8 * ((30 - abs(self.countdown)) / 30) ^ 4, 7, 'center', 0)
+	end
 end
 
 function state.game:draw_board()
@@ -1226,12 +1250,19 @@ end
 
 function state.game:draw()
 	cls()
+	if self.enter_transition_progress < 1 then
+		clip(64 - 64 * self.enter_transition_progress,
+			64 - 64 * self.enter_transition_progress,
+			128 * self.enter_transition_progress,
+			128 * self.enter_transition_progress)
+	end
 	self:draw_background()
 	self:draw_board()
 	self:draw_hud()
 	for effect in all(self.effects) do
 		effect:draw()
 	end
+	clip()
 end
 
 -->8
@@ -1353,6 +1384,9 @@ function state.title:init_main_menu()
 	self.menu_options = {
 		{
 			text = function() return 'play' end,
+			confirm = function()
+				self.transitioning = true
+			end,
 		},
 		{
 			text = function() return 'options' end,
@@ -1386,8 +1420,12 @@ function state.title:init_options_menu()
 end
 
 function state.title:enter()
-	cls(13)
 	self:init_main_menu()
+
+	-- cosmetic
+	cls(13)
+	self.transitioning = false
+	self.transition_progress = 0
 	self.rectangles = {}
 	for i = 1, 20 do
 		add(self.rectangles, {
@@ -1402,21 +1440,24 @@ function state.title:enter()
 end
 
 function state.title:update()
-	if btnp(2) then
-		self.selected_menu_option -= 1
-		if self.selected_menu_option <= 0 then
-			self.selected_menu_option = #self.menu_options
+	-- menus
+	if not self.transitioning then
+		if btnp(2) then
+			self.selected_menu_option -= 1
+			if self.selected_menu_option <= 0 then
+				self.selected_menu_option = #self.menu_options
+			end
 		end
-	end
-	if btnp(3) then
-		self.selected_menu_option += 1
-		if self.selected_menu_option > #self.menu_options then
-			self.selected_menu_option = 1
+		if btnp(3) then
+			self.selected_menu_option += 1
+			if self.selected_menu_option > #self.menu_options then
+				self.selected_menu_option = 1
+			end
 		end
-	end
-	if btnp(4) then
-		if self.menu_options[self.selected_menu_option].confirm then
-			self.menu_options[self.selected_menu_option].confirm()
+		if btnp(4) then
+			if self.menu_options[self.selected_menu_option].confirm then
+				self.menu_options[self.selected_menu_option].confirm()
+			end
 		end
 	end
 
@@ -1428,6 +1469,13 @@ function state.title:update()
 			r.y = rnd(48)
 			r.vx = -4 - rnd(4)
 			r.c = rnd() > .5 and 13 or 6
+		end
+	end
+
+	if self.transitioning then
+		self.transition_progress += 1/15
+		if self.transition_progress >= 3 then
+			switch_state(state.game)
 		end
 	end
 end
@@ -1452,6 +1500,14 @@ function state.title:draw()
 		local y = 92 + 8 * (i - 1)
 		local color = i == self.selected_menu_option and 7 or 5
 		printf(text, 64, y, color, 'center', 0)
+	end
+
+	if self.transitioning then
+		rectfill(64 - 64 * self.transition_progress,
+			64 - 64 * self.transition_progress,
+			64 + 64 * self.transition_progress,
+			64 + 64 * self.transition_progress,
+			0)
 	end
 end
 
