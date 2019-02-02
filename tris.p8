@@ -338,19 +338,10 @@ local function draw_fancy_number(n, x, y, pad, alternate_palette)
 		pal(15, 6)
 	end
 	local digits = 1
-	local power = 10
-	while n >= power do
-		digits += 1
-		power *= 10
-	end
+	while n >= 10 ^ digits do digits += 1 end
 	if pad then digits = max(digits, pad) end
 	for i = 1, digits do
-		local mod = 1
-		for _ = 1, i do mod *= 10 end
-		local div = 1
-		for _ = 1, i - 1 do div *= 10 end
-		local sprite = 32 + flr((n % mod) / div)
-		spr(sprite, x - 6 * i, y)
+		spr(32 + flr((n % (10 ^ i)) / (10 ^ (i - 1))), x - 6 * i, y)
 	end
 	pal()
 end
