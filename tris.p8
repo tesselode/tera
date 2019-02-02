@@ -274,8 +274,7 @@ sound = {
 -- save data locations
 save = {
 	high_score = 0,
-	unlocked_skin_2 = 8,
-	unlocked_skin_3 = 9,
+	unlock_progress = 8,
 	background = 32,
 	music = 33,
 	hard_drop = 34,
@@ -1435,27 +1434,97 @@ function state.title:init_options_menu()
 	self.menu_options = {
 		{
 			text = function()
-				local background = dget(save.background)
-				if background == 0 then
+				local unlock_progress = dget(save.unlock_progress)
+				if self.selected_background == 0 then
 					return '⬅️ background: auto ➡️'
-				elseif background == 1 then
+				elseif self.selected_background == 1 then
 					return '⬅️ background: chill ➡️'
-				elseif background == 2 then
-					return '⬅️ background: slippy ➡️'
-				elseif background == 3 then
-					return '⬅️ background: wavy ➡️'
+				elseif self.selected_background == 2 then
+					if unlock_progress > 0 then
+						return '⬅️ background: slippy ➡️'
+					else
+						return '⬅️ background: ???? ➡️'
+					end
+				elseif self.selected_background == 3 then
+					if unlock_progress > 1 then
+						return '⬅️ background: wavy ➡️'
+					else
+						return '⬅️ background: ???? ➡️'
+					end
+				elseif self.selected_background == 4 then
+					return '⬅️ background: off ➡️'
 				end
 			end,
+			change = function(dir)
+				self.selected_background += dir
+				if self.selected_background < 0 then self.selected_background = 4 end
+				if self.selected_background > 4 then self.selected_background = 0 end
+				local unlock_progress = dget(save.unlock_progress)
+				if self.selected_background == 2 and unlock_progress < 1 then
+					return
+				end
+				if self.selected_background == 3 and unlock_progress < 2 then
+					return
+				end
+				dset(save.background, self.selected_background)
+			end
 		},
 		{
-			text = function() return '⬅️ music: auto ➡️' end,
+			text = function()
+				local unlock_progress = dget(save.unlock_progress)
+				if self.selected_music == 0 then
+					return '⬅️ music: auto ➡️'
+				elseif self.selected_music == 1 then
+					return '⬅️ music: gentle ➡️'
+				elseif self.selected_music == 2 then
+					if unlock_progress > 0 then
+						return '⬅️ music: groovy ➡️'
+					else
+						return '⬅️ music: ???? ➡️'
+					end
+				elseif self.selected_music == 3 then
+					if unlock_progress > 1 then
+						return '⬅️ music: hectic ➡️'
+					else
+						return '⬅️ music: ???? ➡️'
+					end
+				elseif self.selected_music == 4 then
+					return '⬅️ music: off ➡️'
+				end
+			end,
+			change = function(dir)
+				self.selected_music += dir
+				if self.selected_music < 0 then self.selected_music = 4 end
+				if self.selected_music > 4 then self.selected_music = 0 end
+				local unlock_progress = dget(save.unlock_progress)
+				if self.selected_music == 2 and unlock_progress < 1 then
+					return
+				end
+				if self.selected_music == 3 and unlock_progress < 2 then
+					return
+				end
+				dset(save.music, self.selected_music)
+			end
 		},
 		{
-			text = function() return '⬅️ hard drop: normal ➡️' end,
+			text = function()
+				return dget(save.hard_drop) == 0 and '⬅️ hard drop: normal ➡️' or '⬅️ hard drop: sonic ➡️'
+			end,
+			change = function(dir)
+				dset(save.hard_drop, dget(save.hard_drop) == 0 and 1 or 0)
+			end
 		},
 		{
 			text = function() return 'back' end,
 			confirm = function()
+				local unlock_progress = dget(save.unlock_progress)
+				if (self.selected_background == 2 and unlock_progress < 1)
+						or (self.selected_background == 3 and unlock_progress < 2)
+						or (self.selected_music == 2 and unlock_progress < 1)
+						or (self.selected_music == 3 and unlock_progress < 2) then
+					sfx(sound.illegal)
+					return
+				end
 				self:init_main_menu()
 			end,
 		},
@@ -1465,6 +1534,8 @@ end
 
 function state.title:enter()
 	self:init_main_menu()
+	self.selected_background = dget(save.background)
+	self.selected_music = dget(save.music)
 
 	-- cosmetic
 	cls(0)
@@ -1487,12 +1558,23 @@ end
 function state.title:update()
 	-- menus
 	if not self.transitioning then
-		if btnp(2) then
+		if btnp(0) then
+			if self.menu_options[self.selected_menu_option].change then
+				self.menu_options[self.selected_menu_option].change(-1)
+				sfx(sound.shift)
+			end
+		elseif btnp(1) then
+			if self.menu_options[self.selected_menu_option].change then
+				self.menu_options[self.selected_menu_option].change(1)
+				sfx(sound.shift)
+			end
+		elseif btnp(2) then
 			self.selected_menu_option -= 1
 			if self.selected_menu_option <= 0 then
 				self.selected_menu_option = #self.menu_options
 			end
 			self.higlight_animation_time = 0
+			sfx(sound.fall)
 		end
 		if btnp(3) then
 			self.selected_menu_option += 1
@@ -1500,10 +1582,12 @@ function state.title:update()
 				self.selected_menu_option = 1
 			end
 			self.higlight_animation_time = 0
+			sfx(sound.fall)
 		end
 		if btnp(4) then
 			if self.menu_options[self.selected_menu_option].confirm then
 				self.menu_options[self.selected_menu_option].confirm()
+				sfx(sound.rotate_ccw)
 			end
 			self.higlight_animation_time = 0
 		end
