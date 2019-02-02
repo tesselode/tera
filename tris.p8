@@ -1546,7 +1546,7 @@ function state.title:enter()
 	poke(0x5f42, 0b0100) -- disortion
 	poke(0x5f43, 0b0100) -- lowpass
 	music(50)
-	cls(0)
+	cls(13)
 	self.higlight_animation_time = 0
 	self.transitioning = false
 	self.transition_progress = 0
@@ -1558,7 +1558,7 @@ function state.title:enter()
 			w = 48,
 			h = 8,
 			vx = -4 - rnd(4),
-			c = rnd() > .5 and 0 or 1,
+			c = rnd() > .5 and 13 or 6
 		})
 	end
 end
@@ -1614,7 +1614,7 @@ function state.title:update()
 			r.x = 128
 			r.y = rnd(48)
 			r.vx = -4 - rnd(4)
-			r.c = rnd() > .5 and 0 or 1
+			r.c = rnd() > .5 and 13 or 6
 		end
 	end
 
@@ -1640,7 +1640,18 @@ function state.title:draw()
 	printf('hi score: 0', 64, 40, 14, 'center', 2)
 	camera()
 
-	rectfill(0, 84, 128, 128, 0)
+	rectfill(0, 76, 128, 128, 2)
+	camera(0, 3 * sin(time() / 20))
+	fillp(0b1000010000100001)
+	rectfill(0, 72, 128, 76, 0x2D)
+	camera(0, 3 * sin(time() / 19 + .1))
+	fillp(0b1010010110100101)
+	rectfill(0, 76, 128, 80, 0x2D)
+	camera(0, 3 * sin(time() / 18 + .2))
+	fillp(0b0100001000011000)
+	rectfill(0, 80, 128, 84, 0xD2)
+	fillp()
+	camera()
 	for i = 1, #self.menu_options do
 		local text = self.menu_options[i].text()
 		local y = 92 + 8 * (i - 1)
@@ -1650,7 +1661,7 @@ function state.title:draw()
 			printf(text, 64, y + 1, 1, 'center')
 			printf(text, 64, y, color, 'center')
 		else
-			printf(text, 64, y + 1, 5, 'center')
+			printf(text, 64, y + 1, 6, 'center')
 		end
 	end
 
@@ -1868,4 +1879,3 @@ __music__
 00 1c1a1c5a
 01 191a195a
 00 1b1a1b5a
-
