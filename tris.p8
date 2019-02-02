@@ -319,14 +319,13 @@ local function printf(text, x, y, color, align, outline_color)
 		x -= get_text_length(text)
 	end
 	if outline_color then
-		print(text, x - 1, y - 1, outline_color)
-		print(text, x, y - 1, outline_color)
-		print(text, x + 1, y - 1, outline_color)
-		print(text, x + 1, y, outline_color)
-		print(text, x + 1, y + 1, outline_color)
-		print(text, x, y + 1, outline_color)
-		print(text, x - 1, y + 1, outline_color)
-		print(text, x - 1, y, outline_color)
+		for ox = -1, 1 do
+			for oy = -1, 1 do
+				if not (ox == 0 and oy == 0) then
+					print(text, x + ox, y + oy, outline_color)
+				end
+			end
+		end
 	end
 	print(text, x, y, color)
 end
