@@ -578,11 +578,7 @@ function class.menu:update()
 	end
 	if btnp(4) then
 		if self.options[self.selected].confirm then
-			if self.options[self.selected].text() == 'play' then
-				sfx(sound.play)
-			else
-				sfx(sound.rotate_cw)
-			end
+			sfx(self.options[self.selected].sound or sound.rotate_cw)
 			self.options[self.selected].confirm()
 		end
 		self.higlight_animation_time = 0
@@ -1427,17 +1423,44 @@ state.lose = {
 }
 
 function state.lose:enter(previous)
+	self.menu = class.menu {
+		{
+			text = function() return 'retry' end,
+			confirm = function()
+				self.transitioning = true
+				self.menu.disabled = true
+				self.next_state = state.game
+			end,
+			sound = sound.play,
+		},
+		{
+			text = function() return 'back to menu' end,
+			confirm = function()
+				self.transitioning = true
+				self.menu.disabled = true
+				self.next_state = state.title
+			end
+		}
+	}
+	self.menu.disabled = true
+	self.menu.hidden = true
+
+	-- cosmetic
 	self.black_out_height = 0
 	self.gray_out_timer = self.gray_out_animation_interval
 	self.gray_out_row = 1
 	self.results_background_height = 0
 	self.time = 0
+	self.transitioning = false
+	self.transition_progress = 0
 	music(-1)
 	sfx(sound.top_out)
 end
 
 function state.lose:update()
 	state.game:update_cosmetic()
+
+	-- black out animation
 	self.black_out_height += self.black_out_animation_speed
 	self.gray_out_timer -= 1
 	while self.gray_out_timer <= 0 do
@@ -1458,12 +1481,29 @@ function state.lose:update()
 			self.results_background_height = 128
 		end
 	end
+
+	-- results popups
 	if self.time == 180 or self.time == 200 or self.time == 220
 			or self.time == 240 or self.time == 260 or self.time == 280 then
 		sfx(sound.rotate_ccw)
 	end
 	if self.time == 320 then
 		sfx(sound.tetris)
+	end
+
+	-- menu
+	if self.time == 360 then
+		self.menu.hidden = false
+		self.menu.disabled = false
+	end
+	self.menu:update()
+
+	-- exit transition
+	if self.transitioning then
+		self.transition_progress += 1/15
+		if self.transition_progress >= 3 then
+			switch_state(self.next_state)
+		end
 	end
 end
 
@@ -1526,6 +1566,17 @@ function state.lose:draw()
 		draw_fancy_number(state.game.score, 90, 71)
 	end
 	camera()
+
+	self.menu:draw(92)
+
+	-- exit transition
+	if self.transitioning then
+		rectfill(64 - 64 * self.transition_progress,
+			64 - 64 * self.transition_progress,
+			64 + 64 * self.transition_progress,
+			64 + 64 * self.transition_progress,
+			0)
+	end
 end
 
 -->8
@@ -1542,6 +1593,7 @@ function state.title:init_main_menu()
 				self.menu.disabled = true
 				music(-1)
 			end,
+			sound = sound.play,
 		},
 		{
 			text = function() return 'options' end,
