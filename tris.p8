@@ -1604,7 +1604,7 @@ function state.lose:draw()
 			local color = phase > .25 and 7 or phase > -.25 and 15 or 10
 			printf('new best!', 64, 88 + 2.5 * sin(time() / 2), color, 'center', 0)
 		else
-			printf('hi score', 38, 86, 7, 'left', 0)
+			printf('best', 38, 86, 7, 'left', 0)
 			draw_fancy_number(self.previous_high_score, 90, 85, false, true)
 		end
 	end
@@ -1824,7 +1824,7 @@ function state.title:draw()
 	printf('mind', 80 + ox, 10 + oy, 7, 'left', 1)
 	printf('over', 80 + ox, 18 + oy, 7, 'left', 1)
 	printf('matter', 80 + ox, 26 + oy, 6, 'left', 1)
-	printf('hi score: ' .. self.high_score, 64 - ox, 40 + oy, 14, 'center', 2)
+	printf('best: ' .. self.high_score, 64 - ox, 40 + oy, 14, 'center', 2)
 
 	-- divider
 	rectfill(0, 76, 128, 256, 0)
