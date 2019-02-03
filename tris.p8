@@ -272,6 +272,14 @@ sound = {
 	play = 38,
 }
 
+-- music
+song = {
+	song_1 = 20,
+	song_2 = 0,
+	song_3 = 40,
+	title = 50,
+}
+
 -- save data locations
 save = {
 	high_score = 0,
@@ -279,6 +287,23 @@ save = {
 	background = 32,
 	music = 33,
 	hard_drop = 34,
+}
+
+-- options enums
+background_mode = {
+	auto = 0,
+	bg_1 = 1,
+	bg_2 = 2,
+	bg_3 = 3,
+	off = 4,
+}
+
+music_mode = {
+	auto = 0,
+	music_1 = 1,
+	music_2 = 2,
+	music_3 = 3,
+	off = 4,
 }
 
 -- constants --
@@ -606,6 +631,8 @@ function state.game:enter(previous)
 	self.spins = 0
 
 	-- cosmetic
+	self.background_mode = dget(save.background)
+	self.music_mode = dget(save.music)
 	self.play_tetromino_sound = false
 	self.effects = {}
 	self.score_y_offset = 0
@@ -716,6 +743,13 @@ function state.game:place_current_tetromino(hard_drop, top_out)
 	-- reset some inputs
 	self.shift_repeat_direction = 0
 	self.shift_repeat_timer = -1
+
+	-- score-based unlocks
+	if self.score >= 700 then
+		dset(save.unlock_progress, 2)
+	elseif self.score >= 300 then
+		dset(save.unlock_progress, 1)
+	end
 end
 
 function state.game:apply_gravity(soft_drop)
@@ -1045,21 +1079,23 @@ function state.game:update_cosmetic()
 	end
 
 	-- music cues
-	if not self.reached_music_fadeout_1 and self.score >= 270 then
-		music(-1, 4000)
-		self.reached_music_fadeout_1 = true
-	end
-	if not self.reached_music_2 and self.score >= 300 then
-		music(0)
-		self.reached_music_2 = true
-	end
-	if not self.reached_music_fadeout_2 and self.score >= 670 then
-		music(-1, 4000)
-		self.reached_music_fadeout_2 = true
-	end
-	if not self.reached_music_3 and self.score >= 700 then
-		music(40)
-		self.reached_music_3 = true
+	if self.music_mode == music_mode.auto then
+		if not self.reached_music_fadeout_1 and self.score >= 270 then
+			music(-1, 4000)
+			self.reached_music_fadeout_1 = true
+		end
+		if not self.reached_music_2 and self.score >= 300 then
+			music(song.song_2)
+			self.reached_music_2 = true
+		end
+		if not self.reached_music_fadeout_2 and self.score >= 670 then
+			music(-1, 4000)
+			self.reached_music_fadeout_2 = true
+		end
+		if not self.reached_music_3 and self.score >= 700 then
+			music(song.song_3)
+			self.reached_music_3 = true
+		end
 	end
 
 	-- background wipe transition
@@ -1088,7 +1124,13 @@ function state.game:update()
 		end
 		if self.countdown == 0 then
 			self.play_tetromino_sound = true
-			music(20)
+			if self.music_mode == music_mode.auto or self.music_mode == music_mode.music_1 then
+				music(song.song_1)
+			elseif self.music_mode == music_mode.music_2 then
+				music(song.song_2)
+			elseif self.music_mode == music_mode.music_3 then
+				music(song.song_3)
+			end
 		end
 	end
 	if self.countdown <= 0 then
@@ -1231,7 +1273,7 @@ function state.game:draw_background_1()
 end
 
 function state.game:draw_background_2()
-	cls(1)
+	rectfill(0, 0, 128, 128, 1)
 	for i = 1, 2 do
 		local t = time() * sqrt(i) / 25
 		local w = 128 + 64 * sin(t)
@@ -1255,17 +1297,25 @@ function state.game:draw_background_3()
 end
 
 function state.game:draw_background()
-	if self.score >= 700 then
-		self:draw_background_3()
-	elseif self.score >= 300 then
-		self:draw_background_2()
-	else
+	if self.background_mode == background_mode.auto then
+		if self.score >= 700 then
+			self:draw_background_3()
+		elseif self.score >= 300 then
+			self:draw_background_2()
+		else
+			self:draw_background_1()
+		end
+		if self.score >= 270 and self.score < 300 or self.score >= 670 and self.score < 700 then
+			rectfill(0, 0, 128, self.background_wipe_height, 0)
+		else
+			rectfill(0, 128 - self.background_wipe_height, 128, 128, 0)
+		end
+	elseif self.background_mode == background_mode.bg_1 then
 		self:draw_background_1()
-	end
-	if self.score >= 270 and self.score < 300 or self.score >= 670 and self.score < 700 then
-		rectfill(0, 0, 128, self.background_wipe_height, 0)
-	else
-		rectfill(0, 128 - self.background_wipe_height, 128, 128, 0)
+	elseif self.background_mode == background_mode.bg_2 then
+		self:draw_background_2()
+	elseif self.background_mode == background_mode.bg_3 then
+		self:draw_background_3()
 	end
 end
 
@@ -1277,7 +1327,9 @@ function state.game:draw()
 			128 * self.enter_transition_progress,
 			128 * self.enter_transition_progress)
 	end
-	self:draw_background()
+	if self.background_mode ~= background_mode.off then
+		self:draw_background()
+	end
 	self:draw_board()
 	self:draw_hud()
 	for effect in all(self.effects) do
@@ -1425,23 +1477,23 @@ function state.title:init_options_menu()
 		{
 			text = function()
 				local unlock_progress = dget(save.unlock_progress)
-				if self.selected_background == 0 then
+				if self.selected_background == background_mode.auto then
 					return '⬅️ background: auto ➡️'
-				elseif self.selected_background == 1 then
+				elseif self.selected_background == background_mode.bg_1 then
 					return '⬅️ background: chill ➡️'
-				elseif self.selected_background == 2 then
+				elseif self.selected_background == background_mode.bg_2 then
 					if unlock_progress > 0 then
 						return '⬅️ background: slippy ➡️'
 					else
 						return '⬅️ background: ???? ➡️'
 					end
-				elseif self.selected_background == 3 then
+				elseif self.selected_background == background_mode.bg_3 then
 					if unlock_progress > 1 then
 						return '⬅️ background: wavy ➡️'
 					else
 						return '⬅️ background: ???? ➡️'
 					end
-				elseif self.selected_background == 4 then
+				elseif self.selected_background == background_mode.off then
 					return '⬅️ background: off ➡️'
 				end
 			end,
@@ -1450,10 +1502,10 @@ function state.title:init_options_menu()
 				if self.selected_background < 0 then self.selected_background = 4 end
 				if self.selected_background > 4 then self.selected_background = 0 end
 				local unlock_progress = dget(save.unlock_progress)
-				if self.selected_background == 2 and unlock_progress < 1 then
+				if self.selected_background == background_mode.bg_2 and unlock_progress < 1 then
 					return
 				end
-				if self.selected_background == 3 and unlock_progress < 2 then
+				if self.selected_background == background_mode.bg_3 and unlock_progress < 2 then
 					return
 				end
 				dset(save.background, self.selected_background)
@@ -1462,23 +1514,23 @@ function state.title:init_options_menu()
 		{
 			text = function()
 				local unlock_progress = dget(save.unlock_progress)
-				if self.selected_music == 0 then
+				if self.selected_music == music_mode.auto then
 					return '⬅️ music: auto ➡️'
-				elseif self.selected_music == 1 then
+				elseif self.selected_music == music_mode.music_1 then
 					return '⬅️ music: gentle ➡️'
-				elseif self.selected_music == 2 then
+				elseif self.selected_music == music_mode.music_2 then
 					if unlock_progress > 0 then
 						return '⬅️ music: groovy ➡️'
 					else
 						return '⬅️ music: ???? ➡️'
 					end
-				elseif self.selected_music == 3 then
+				elseif self.selected_music == music_mode.music_3 then
 					if unlock_progress > 1 then
 						return '⬅️ music: hectic ➡️'
 					else
 						return '⬅️ music: ???? ➡️'
 					end
-				elseif self.selected_music == 4 then
+				elseif self.selected_music == music_mode.off then
 					return '⬅️ music: off ➡️'
 				end
 			end,
@@ -1487,10 +1539,10 @@ function state.title:init_options_menu()
 				if self.selected_music < 0 then self.selected_music = 4 end
 				if self.selected_music > 4 then self.selected_music = 0 end
 				local unlock_progress = dget(save.unlock_progress)
-				if self.selected_music == 2 and unlock_progress < 1 then
+				if self.selected_music == music_mode.music_2 and unlock_progress < 1 then
 					return
 				end
-				if self.selected_music == 3 and unlock_progress < 2 then
+				if self.selected_music == music_mode.music_3 and unlock_progress < 2 then
 					return
 				end
 				dset(save.music, self.selected_music)
@@ -1528,7 +1580,7 @@ function state.title:enter()
 	self.selected_music = dget(save.music)
 
 	-- cosmetic
-	music(50)
+	music(song.title)
 	self.enter_animation_progress = 0
 	self.higlight_animation_time = 0
 	self.transitioning = false
