@@ -1167,6 +1167,17 @@ function state.game:draw_board_contents()
 	end
 end
 
+function state.game:draw_board_border()
+	camera(-self.board_draw_x, -self.board_draw_y)
+	rect(0, 0, board_width * block_size,
+		visible_board_height * block_size, 7)
+	line(1, visible_board_height * block_size + 1,
+		board_width * block_size + 1, visible_board_height * block_size + 1, 6)
+	line(board_width * block_size + 1, 1,
+		board_width * block_size + 1, visible_board_height * block_size + 1, 6)
+	camera()
+end
+
 function state.game:draw_board_grid()
 	camera(-self.board_draw_x, -self.board_draw_y)
 	for x = 1, board_width - 1 do
@@ -1177,12 +1188,6 @@ function state.game:draw_board_grid()
 		line(0, y * block_size, board_width * block_size,
 			y * block_size, 1)
 	end
-	rect(0, 0, board_width * block_size,
-		visible_board_height * block_size, 7)
-	line(1, visible_board_height * block_size + 1,
-		board_width * block_size + 1, visible_board_height * block_size + 1, 6)
-	line(board_width * block_size + 1, 1,
-		board_width * block_size + 1, visible_board_height * block_size + 1, 6)
 	camera()
 end
 
@@ -1255,6 +1260,7 @@ function state.game:draw_board()
 		self.board_draw_y + block_size * visible_board_height,
 		0)
 	self:draw_board_grid()
+	self:draw_board_border()
 	self:draw_board_contents()
 	self:draw_current_tetromino(true)
 	self:draw_current_tetromino()
@@ -1373,10 +1379,10 @@ function state.lose:update()
 		end
 	end
 	if self.time < 10000 then self.time += 1 end
-	if self.time > 140 and self.results_background_height < visible_board_height * block_size then
+	if self.time > 140 and self.results_background_height < 128 then
 		self.results_background_height += 6
-		if self.results_background_height > visible_board_height * block_size then
-			self.results_background_height = visible_board_height * block_size
+		if self.results_background_height > 128 then
+			self.results_background_height = 128
 		end
 	end
 	if self.time == 180 or self.time == 200 or self.time == 220
@@ -1406,10 +1412,11 @@ function state.lose:draw()
 
 	-- results
 	if self.results_background_height > 0 then
-		rectfill(state.game.board_draw_x + 1, state.game.board_draw_y + 1,
+		rectfill(state.game.board_draw_x + 1, 0,
 			state.game.board_draw_x + board_width * block_size - 1,
-			state.game.board_draw_y + self.results_background_height - 1, 0)
+			self.results_background_height, 0)
 	end
+	state.game:draw_board_border()
 	if self.time > 180 then
 		camera(0, -max(184 - self.time, 0))
 		printf('moves', 38, 16, 6, 'left', 0)
