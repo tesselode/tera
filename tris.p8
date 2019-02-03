@@ -1544,8 +1544,8 @@ function state.lose:draw()
 
 	-- results
 	if self.results_background_height > 0 then
-		rectfill(state.game.board_draw_x + 1, 0,
-			state.game.board_draw_x + board_width * block_size - 1,
+		rectfill(state.game.board_draw_x, 0,
+			state.game.board_draw_x + board_width * block_size,
 			self.results_background_height, 0)
 	end
 	state.game:draw_board_border()
