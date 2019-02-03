@@ -717,6 +717,19 @@ function state.game:enter(previous)
 	self.reached_music_3 = false
 	self.background_wipe_height = 0
 	self.enter_transition_progress = 0
+
+	-- pause menu
+	menuitem(1, 'retry', function()
+		switch_state(state.game)
+	end)
+	menuitem(2, 'back to title', function()
+		switch_state(state.title)
+	end)
+end
+
+function state.game:leave()
+	menuitem(1)
+	menuitem(2)
 end
 
 function state.game:is_block_free(x, y)
