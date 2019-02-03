@@ -532,6 +532,79 @@ function class.level_up_message:draw()
 	camera()
 end
 
+-- menu
+
+class.menu = new_class()
+
+function class.menu:new(options)
+	self.options = options
+	self.selected = 1
+	self.disabled = false
+	self.hidden = false
+	self.higlight_animation_time = 0
+end
+
+function class.menu:update()
+	self.higlight_animation_time += 1/60
+
+	if self.disabled then return end
+
+	-- input
+	if btnp(0) then
+		if self.options[self.selected].change then
+			self.options[self.selected].change(-1)
+			sfx(sound.shift)
+		end
+	elseif btnp(1) then
+		if self.options[self.selected].change then
+			self.options[self.selected].change(1)
+			sfx(sound.shift)
+		end
+	elseif btnp(2) then
+		self.selected -= 1
+		if self.selected <= 0 then
+			self.selected = #self.options
+		end
+		self.higlight_animation_time = 0
+		sfx(sound.fall)
+	end
+	if btnp(3) then
+		self.selected += 1
+		if self.selected > #self.options then
+			self.selected = 1
+		end
+		self.higlight_animation_time = 0
+		sfx(sound.fall)
+	end
+	if btnp(4) then
+		if self.options[self.selected].confirm then
+			if self.options[self.selected].text() == 'play' then
+				sfx(sound.play)
+			else
+				sfx(sound.rotate_cw)
+			end
+			self.options[self.selected].confirm()
+		end
+		self.higlight_animation_time = 0
+	end
+end
+
+function class.menu:draw(top)
+	if self.hidden then return end
+	for i = 1, #self.options do
+		local text = self.options[i].text()
+		local y = top + 8 * (i - 1)
+		if i == self.selected then
+			local phase = cos(self.higlight_animation_time / 2)
+			local color = phase > .25 and 7 or phase > -.25 and 15 or 14
+			printf(text, 64, y + 1, 1, 'center')
+			printf(text, 64, y, color, 'center')
+		else
+			printf(text, 64, y + 1, 6, 'center')
+		end
+	end
+end
+
 -->8
 -- gameplay state
 
@@ -1461,11 +1534,12 @@ end
 state.title = {}
 
 function state.title:init_main_menu()
-	self.menu_options = {
+	self.menu = class.menu {
 		{
 			text = function() return 'play' end,
 			confirm = function()
 				self.transitioning = true
+				self.menu.disabled = true
 				music(-1)
 			end,
 		},
@@ -1476,11 +1550,10 @@ function state.title:init_main_menu()
 			end,
 		},
 	}
-	self.selected_menu_option = 1
 end
 
 function state.title:init_options_menu()
-	self.menu_options = {
+	self.menu = class.menu {
 		{
 			text = function()
 				local unlock_progress = dget(save.unlock_progress)
@@ -1578,7 +1651,6 @@ function state.title:init_options_menu()
 			end,
 		},
 	}
-	self.selected_menu_option = 1
 end
 
 function state.title:enter()
@@ -1606,56 +1678,15 @@ function state.title:enter()
 end
 
 function state.title:update()
-	-- menus
-	if not self.transitioning then
-		if btnp(0) then
-			if self.menu_options[self.selected_menu_option].change then
-				self.menu_options[self.selected_menu_option].change(-1)
-				sfx(sound.shift)
-			end
-		elseif btnp(1) then
-			if self.menu_options[self.selected_menu_option].change then
-				self.menu_options[self.selected_menu_option].change(1)
-				sfx(sound.shift)
-			end
-		elseif btnp(2) then
-			self.selected_menu_option -= 1
-			if self.selected_menu_option <= 0 then
-				self.selected_menu_option = #self.menu_options
-			end
-			self.higlight_animation_time = 0
-			sfx(sound.fall)
-		end
-		if btnp(3) then
-			self.selected_menu_option += 1
-			if self.selected_menu_option > #self.menu_options then
-				self.selected_menu_option = 1
-			end
-			self.higlight_animation_time = 0
-			sfx(sound.fall)
-		end
-		if btnp(4) then
-			if self.menu_options[self.selected_menu_option].confirm then
-			 if self.menu_options[self.selected_menu_option].text() == 'play' then
-					sfx(sound.play)
-				else
-					sfx(sound.rotate_cw)
-				end
-				self.menu_options[self.selected_menu_option].confirm()
-			end
-			self.higlight_animation_time = 0
-		end
-	end
+	self.menu:update()
 
 	-- cosmetic
 	if self.enter_animation_progress < 1 then
 		self.enter_animation_progress += (1 - self.enter_animation_progress) * .025
-		if self.enter_animation_progress > .99 then
+		if self.enter_animation_progress > .999 then
 			self.enter_animation_progress = 1
 		end
 	end
-
-	self.higlight_animation_time += 1/60
 
 	for r in all(self.rectangles) do
 		r.x += r.vx
@@ -1705,18 +1736,7 @@ function state.title:draw()
 	fillp()
 
 	-- menu
-	for i = 1, #self.menu_options do
-		local text = self.menu_options[i].text()
-		local y = 92 + 8 * (i - 1)
-		if i == self.selected_menu_option then
-			local phase = cos(self.higlight_animation_time / 2)
-			local color = phase > .25 and 7 or phase > -.25 and 15 or 14
-			printf(text, 64, y + 1, 1, 'center')
-			printf(text, 64, y, color, 'center')
-		else
-			printf(text, 64, y + 1, 6, 'center')
-		end
-	end
+	self.menu:draw(92)
 
 	camera()
 
