@@ -599,7 +599,7 @@ function class.menu:draw(top)
 			printf(text, 64, y + 1, 1, 'center')
 			printf(text, 64, y, color, 'center')
 		else
-			printf(text, 64, y + 1, 6, 'center')
+			printf(text, 64, y + 1, 5, 'center')
 		end
 	end
 end
@@ -2052,3 +2052,4 @@ __music__
 00 41424344
 00 191a1b1c
 04 411e1d44
+
