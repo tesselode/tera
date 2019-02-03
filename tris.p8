@@ -288,6 +288,7 @@ save = {
 	background = 32,
 	music = 33,
 	hard_drop = 34,
+	rotation = 35,
 }
 
 -- options enums
@@ -543,6 +544,7 @@ function class.menu:new(options)
 	self.disabled = false
 	self.hidden = false
 	self.higlight_animation_time = 0
+	self.y_offset = 0
 end
 
 function class.menu:update()
@@ -590,7 +592,7 @@ function class.menu:draw(top)
 	if self.hidden then return end
 	for i = 1, #self.options do
 		local text = self.options[i].text()
-		local y = top + 8 * (i - 1)
+		local y = top + self.y_offset + 8 * (i - 1)
 		if i == self.selected then
 			local phase = cos(self.higlight_animation_time / 2)
 			local color = phase > .25 and 7 or phase > -.25 and 15 or 14
@@ -676,6 +678,7 @@ end
 function state.game:enter(previous)
 	self:init_board()
 	self:init_next_queue()
+	self.inverted_rotation = dget(save.rotation) == 1
 	self.sonic_drop = dget(save.hard_drop) == 1
 	self.score = 0
 	self.time = 0
@@ -1109,13 +1112,13 @@ function state.game:update_gameplay()
 		if btn(5) then
 			self:hold()
 		else
-			self:input_rotation(true)
+			self:input_rotation(not self.inverted_rotation)
 		end
 	elseif btnp(5) then
 		if btn(4) then
 			self:hold()
 		else
-			self:input_rotation(false)
+			self:input_rotation(self.inverted_rotation)
 		end
 	end
 
@@ -1708,6 +1711,14 @@ function state.title:init_options_menu()
 		},
 		{
 			text = function()
+				return dget(save.rotation) == 0 and '⬅️ rotation: normal ➡️' or '⬅️ rotation: inverted ➡️'
+			end,
+			change = function(dir)
+				dset(save.rotation, dget(save.rotation) == 0 and 1 or 0)
+			end
+		},
+		{
+			text = function()
 				return dget(save.hard_drop) == 0 and '⬅️ hard drop: normal ➡️' or '⬅️ hard drop: sonic ➡️'
 			end,
 			change = function(dir)
@@ -1729,6 +1740,7 @@ function state.title:init_options_menu()
 			end,
 		},
 	}
+	self.menu.y_offset = -8
 end
 
 function state.title:enter()
