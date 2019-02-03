@@ -676,6 +676,7 @@ end
 function state.game:enter(previous)
 	self:init_board()
 	self:init_next_queue()
+	self.sonic_drop = dget(save.hard_drop) == 1
 	self.score = 0
 	self.time = 0
 	self.spawn_timer = self:get_spawn_delay()
@@ -791,10 +792,8 @@ function state.game:place_current_tetromino(hard_drop, top_out)
 				local board_x = c.x + relative_x - 1
 				local board_y = c.y + relative_y - 1
 				self.board[board_x][board_y] = c.shape
-				if hard_drop then
-					local x, y = self:board_to_screen(board_x, board_y)
-					add(self.effects, class.particle(x, y, tetrominoes[c.shape].color, 1/4))
-				end
+				local x, y = self:board_to_screen(board_x, board_y)
+				add(self.effects, class.particle(x, y, tetrominoes[c.shape].color, 1/4))
 			end
 		end
 	end
@@ -846,15 +845,24 @@ function state.game:get_hard_drop_y()
 	return y
 end
 
+function state.game:reset_gravity_timer()
+	self.gravity_timer = min(self:get_gravity_interval(), self.soft_drop_gravity)
+end
+
 function state.game:soft_drop()
 	self:apply_gravity(true)
-	self.gravity_timer = min(self:get_gravity_interval(), self.soft_drop_gravity)
+	self:reset_gravity_timer()
 end
 
 function state.game:hard_drop()
 	if not self.current_tetromino then return end
 	self.current_tetromino.y = self:get_hard_drop_y()
-	self:place_current_tetromino(true)
+	if self.sonic_drop then
+		sfx(sound.hard_drop)
+		self:reset_gravity_timer()
+	else
+		self:place_current_tetromino(true)
+	end
 end
 
 function state.game:update_gravity(soft_drop)
