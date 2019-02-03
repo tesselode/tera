@@ -270,6 +270,7 @@ sound = {
 	level_up = 40,
 	ready = 39,
 	play = 38,
+	high_score = 37,
 }
 
 -- music
@@ -1423,6 +1424,12 @@ state.lose = {
 }
 
 function state.lose:enter(previous)
+	self.previous_high_score = dget(save.high_score)
+	self.is_new_high_score = state.game.score > dget(save.high_score)
+	if self.is_new_high_score then
+		dset(save.high_score, state.game.score)
+	end
+
 	self.menu = class.menu {
 		{
 			text = function() return 'retry' end,
@@ -1495,6 +1502,7 @@ function state.lose:update()
 	if self.time == 360 then
 		self.menu.hidden = false
 		self.menu.disabled = false
+		if self.is_new_high_score then sfx(sound.high_score) end
 	end
 	self.menu:update()
 
@@ -1566,8 +1574,18 @@ function state.lose:draw()
 		draw_fancy_number(state.game.score, 90, 71)
 	end
 	camera()
+	if self.time > 360 then
+		if self.is_new_high_score then
+			local phase = cos(time() / 2)
+			local color = phase > .25 and 7 or phase > -.25 and 15 or 10
+			printf('new best!', 64, 88 + 2.5 * sin(time() / 2), color, 'center', 0)
+		else
+			printf('hi score', 38, 86, 7, 'left', 0)
+			draw_fancy_number(self.previous_high_score, 90, 85, false, true)
+		end
+	end
 
-	self.menu:draw(92)
+	self.menu:draw(100)
 
 	-- exit transition
 	if self.transitioning then
@@ -1709,6 +1727,7 @@ function state.title:enter()
 	self:init_main_menu()
 	self.selected_background = dget(save.background)
 	self.selected_music = dget(save.music)
+	self.high_score = dget(save.high_score)
 
 	-- cosmetic
 	music(song.title)
@@ -1772,7 +1791,7 @@ function state.title:draw()
 	printf('mind', 80 + ox, 10 + oy, 7, 'left', 1)
 	printf('over', 80 + ox, 18 + oy, 7, 'left', 1)
 	printf('matter', 80 + ox, 26 + oy, 6, 'left', 1)
-	printf('hi score: 0', 64 - ox, 40 + oy, 14, 'center', 2)
+	printf('hi score: ' .. self.high_score, 64 - ox, 40 + oy, 14, 'center', 2)
 
 	-- divider
 	rectfill(0, 76, 128, 256, 0)
@@ -1920,7 +1939,7 @@ __sfx__
 001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+010800002835028342233552535526350263422535523355213502134225355283552d3502d3422d3150c3000c3000c3000c3000c3000c3000c3000c3000c3000c3000c3000c3000c3000c3000c3000c3000c300
 010600001a3501f35021350263502a3502d350323501a3301f33021330263302a3302d330323301a3101f31021310263102a3102d310323100c3000c3000c3000c3000c3000c3000c3000c3000c3000c3000c300
 01080000153551a3551c3552135221352213550c3000c3000c3000c3000c3000c3000c3000c3000c3000c3000c3000c3000c3000c3000c3000c3000c3000c3000c3000c3000c3000c3000c3000c3000c3000c300
 010b00001a355153551a3551f3501f3321a3551f3552435024332243122a3000c3000c3000c3000c3000c3000c3000c3000c3000c3000c3000c3000c3000c3000c3000c3000c3000c3000c3000c3000c3000c300
