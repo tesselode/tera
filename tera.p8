@@ -836,9 +836,9 @@ function state.game:place_current_tetromino(hard_drop, top_out)
 	self.shift_repeat_timer = -1
 
 	-- level-based unlocks
-	if self.level >= self.skin_change_1 then
+	if self.level >= self.skin_change_2 then
 		dset(save.unlock_progress, 2)
-	elseif self.level >= self.skin_change_2 then
+	elseif self.level >= self.skin_change_1 then
 		dset(save.unlock_progress, 1)
 	end
 end
