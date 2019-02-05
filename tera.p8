@@ -664,15 +664,8 @@ function state.game:get_gravity_interval()
 end
 
 function state.game:get_lock_delay()
-	if     self.score < 800  then return 30
-	elseif self.score < 900  then return 28
-	elseif self.score < 1000 then return 26
-	elseif self.score < 1100 then return 24
-	elseif self.score < 1200 then return 22
-	elseif self.score < 1300 then return 20
-	elseif self.score < 1400 then return 18
-	else                          return 16
-	end
+	local level = flr(self.score / 100)
+	return max(120 - 10 * level, 30)
 end
 
 function state.game:enter(previous)
@@ -680,6 +673,7 @@ function state.game:enter(previous)
 	self:init_next_queue()
 	self.inverted_rotation = dget(save.rotation) == 1
 	self.sonic_drop = dget(save.hard_drop) == 1
+	self.current_tetromino = nil
 	self.score = 0
 	self.time = 0
 	self.spawn_timer = self:get_spawn_delay()
@@ -707,6 +701,7 @@ function state.game:enter(previous)
 	-- cosmetic
 	self.background_mode = dget(save.background)
 	self.music_mode = dget(save.music)
+	music(-1)
 	self.play_tetromino_sound = false
 	self.effects = {}
 	self.score_y_offset = 0
@@ -780,7 +775,7 @@ function state.game:spawn_tetromino(shape)
 		switch_state(state.lose)
 	end
 	self.gravity_timer = self:get_gravity_interval()
-	self.lock_timer = -1
+	self.lock_timer = self:get_lock_delay()
 	self.is_spun = false
 end
 
@@ -843,12 +838,8 @@ function state.game:apply_gravity(soft_drop)
 	if self:can_tetromino_fit(c.shape, c.x, c.y - 1, c.orientation) then
 		c.y -= 1
 		sfx(sound.fall)
-	else
-		if soft_drop then
-			self:place_current_tetromino()
-		else
-			self.lock_timer = self:get_lock_delay()
-		end
+	elseif soft_drop then
+		self:place_current_tetromino()
 	end
 end
 
@@ -882,13 +873,6 @@ function state.game:hard_drop()
 end
 
 function state.game:update_gravity(soft_drop)
-	if self.lock_timer ~= -1 then
-		self.lock_timer -= 1
-		if self.lock_timer <= 0 then
-			self:place_current_tetromino()
-		end
-		return
-	end
 	self.gravity_timer -= 1
 	while self.gravity_timer <= 0 do
 		local gravity_interval = self:get_gravity_interval()
@@ -905,7 +889,6 @@ function state.game:shift(dir)
 	if not c then return end
 	if self:can_tetromino_fit(c.shape, c.x + dir, c.y, c.orientation) then
 		c.x += dir
-		self.lock_timer = -1
 		return true
 	end
 	return false
@@ -931,7 +914,6 @@ function state.game:rotate(ccw)
 			c.x += dx
 			c.y += dy
 			c.orientation = new_orientation
-			self.lock_timer = -1
 
 			-- detect spins
 			self.is_spun = true
@@ -1135,7 +1117,19 @@ function state.game:update_gameplay()
 		end
 	end
 
+	-- gravity
 	self:update_gravity(btn(3))
+
+	-- lock delay
+	local c = self.current_tetromino
+	if c then
+		if not self:can_tetromino_fit(c.shape, c.x, c.y - 1, c.orientation) then
+			self.lock_timer -= 1
+			if self.lock_timer <= 0 then
+				self:place_current_tetromino()
+			end
+		end
+	end
 end
 
 function state.game:update_cosmetic()
@@ -2052,4 +2046,3 @@ __music__
 00 41424344
 00 191a1b1c
 04 411e1d44
-
