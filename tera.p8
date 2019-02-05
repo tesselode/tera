@@ -616,6 +616,7 @@ state.game = {
 	moves_per_level = 40,
 	skin_change_1 = 4,
 	skin_change_2 = 8,
+	skin_change_dramatic_pause = 8,
 	score_bounce_amount = 4,
 	background_wipe_speed = 1,
 }
@@ -667,7 +668,20 @@ function state.game:get_gravity_interval()
 end
 
 function state.game:get_lock_delay()
-	return max(120 - 10 * (self.level - 1), 30)
+	if     self.level < 4  then return 120
+	elseif self.level < 5  then return 110
+	elseif self.level < 6  then return 100
+	elseif self.level < 7  then return 90
+	elseif self.level < 8  then return 80
+	elseif self.level < 9 then return 70
+	elseif self.level < 10 then return 60
+	elseif self.level < 11 then return 50
+	elseif self.level < 12 then return 45
+	elseif self.level < 13 then return 40
+	elseif self.level < 14 then return 37
+	elseif self.level < 15 then return 34
+	else                        return 30
+	end
 end
 
 function state.game:enter(previous)
@@ -1174,7 +1188,7 @@ function state.game:update_cosmetic()
 	if self.music_mode == music_mode.auto then
 		if not self.reached_music_fadeout_1
 				and self.level == self.skin_change_1 - 1
-				and self.moves_until_next_level < 10 then
+				and self.moves_until_next_level < self.skin_change_dramatic_pause then
 			music(-1, 4000)
 			self.reached_music_fadeout_1 = true
 		end
@@ -1184,7 +1198,7 @@ function state.game:update_cosmetic()
 		end
 		if not self.reached_music_fadeout_2
 				and self.level == self.skin_change_2 - 1
-				and self.moves_until_next_level < 10 then
+				and self.moves_until_next_level < self.skin_change_dramatic_pause then
 			music(-1, 4000)
 			self.reached_music_fadeout_2 = true
 		end
@@ -1196,7 +1210,7 @@ function state.game:update_cosmetic()
 
 	-- background wipe transition
 	if (self.level == self.skin_change_1 - 1 or self.level == self.skin_change_2 - 1)
-			and self.moves_until_next_level < 10 then
+			and self.moves_until_next_level < self.skin_change_dramatic_pause then
 		if self.background_wipe_height < 128 then
 			self.background_wipe_height += self.background_wipe_speed
 		end
@@ -1409,7 +1423,7 @@ function state.game:draw_background()
 			self:draw_background_1()
 		end
 		if (self.level == self.skin_change_1 - 1 or self.level == self.skin_change_2 - 1)
-			and self.moves_until_next_level < 10 then
+			and self.moves_until_next_level < self.skin_change_dramatic_pause then
 			rectfill(0, 0, 128, self.background_wipe_height, 0)
 		else
 			rectfill(0, 128 - self.background_wipe_height, 128, 128, 0)
@@ -1440,7 +1454,6 @@ function state.game:draw()
 		effect:draw()
 	end
 	clip()
-	print(self.level, 0, 0, 7)
 end
 
 -->8
