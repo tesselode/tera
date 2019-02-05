@@ -613,6 +613,9 @@ state.game = {
 	shift_first_repeat_time = 10,
 	shift_repeat_time = 1,
 	soft_drop_gravity = 2,
+	moves_per_level = 40,
+	skin_change_1 = 4,
+	skin_change_2 = 8,
 	score_bounce_amount = 4,
 	background_wipe_speed = 1,
 }
@@ -645,27 +648,26 @@ function state.game:init_next_queue()
 end
 
 function state.game:get_spawn_delay()
-	return self.score < 1200 and 15
-	    or self.score < 2200 and 15 - flr((self.score - 1100) / 100)
+	return self.level < 13 and 15
+	    or self.level < 23 and 15 - self.level
 	    or 5
 end
 
 function state.game:get_gravity_interval()
-	if     self.score < 100 then return 45
-	elseif self.score < 200 then return 20
-	elseif self.score < 300 then return 10
-	elseif self.score < 400 then return 7
-	elseif self.score < 500 then return 4
-	elseif self.score < 600 then return 2
-	elseif self.score < 700 then return 1
-	elseif self.score < 800 then return .5
-	else                         return .1
+	if     self.level < 2 then return 45
+	elseif self.level < 3 then return 20
+	elseif self.level < 4 then return 10
+	elseif self.level < 5 then return 7
+	elseif self.level < 6 then return 4
+	elseif self.level < 7 then return 2
+	elseif self.level < 8 then return 1
+	elseif self.level < 9 then return .5
+	else                       return .1
 	end
 end
 
 function state.game:get_lock_delay()
-	local level = flr(self.score / 100)
-	return max(120 - 10 * level, 30)
+	return max(120 - 10 * (self.level - 1), 30)
 end
 
 function state.game:enter(previous)
@@ -676,6 +678,9 @@ function state.game:enter(previous)
 	self.current_tetromino = nil
 	self.score = 0
 	self.time = 0
+	self.moves = 0
+	self.moves_until_next_level = self.moves_per_level
+	self.level = 1
 	self.spawn_timer = self:get_spawn_delay()
 	self.shift_repeat_timer = -1
 	self.shift_repeat_direction = 0
@@ -691,7 +696,6 @@ function state.game:enter(previous)
 	self.countdown = 80
 
 	-- stats
-	self.moves = 0
 	self.singles = 0
 	self.doubles = 0
 	self.triples = 0
@@ -705,7 +709,6 @@ function state.game:enter(previous)
 	self.play_tetromino_sound = false
 	self.effects = {}
 	self.score_y_offset = 0
-	self.next_level_checkpoint = 100
 	self.reached_music_fadeout_1 = false
 	self.reached_music_2 = false
 	self.reached_music_fadeout_2 = false
@@ -811,6 +814,14 @@ function state.game:place_current_tetromino(hard_drop, top_out)
 	if not top_out then
 		self.score += 1
 		self.moves += 1
+		-- level up
+		self.moves_until_next_level -= 1
+		if self.moves_until_next_level == 0 then
+			self.moves_until_next_level = self.moves_per_level
+			self.level += 1
+			add(self.effects, class.level_up_message())
+			sfx(sound.level_up)
+		end
 	end
 	self:detect_filled_lines()
 	self.current_tetromino = nil	
@@ -824,10 +835,10 @@ function state.game:place_current_tetromino(hard_drop, top_out)
 	self.shift_repeat_direction = 0
 	self.shift_repeat_timer = -1
 
-	-- score-based unlocks
-	if self.score >= 700 then
+	-- level-based unlocks
+	if self.level >= self.skin_change_1 then
 		dset(save.unlock_progress, 2)
-	elseif self.score >= 300 then
+	elseif self.level >= self.skin_change_2 then
 		dset(save.unlock_progress, 1)
 	end
 end
@@ -1159,35 +1170,33 @@ function state.game:update_cosmetic()
 		self.play_tetromino_sound = false
 	end
 
-	-- level up message
-	if self.score >= self.next_level_checkpoint then
-		add(self.effects, class.level_up_message())
-		sfx(sound.level_up)
-		self.next_level_checkpoint += 100
-	end
-
 	-- music cues
 	if self.music_mode == music_mode.auto then
-		if not self.reached_music_fadeout_1 and self.score >= 270 then
+		if not self.reached_music_fadeout_1
+				and self.level == self.skin_change_1 - 1
+				and self.moves_until_next_level < 10 then
 			music(-1, 4000)
 			self.reached_music_fadeout_1 = true
 		end
-		if not self.reached_music_2 and self.score >= 300 then
+		if not self.reached_music_2 and self.level == self.skin_change_1 then
 			music(song.song_2)
 			self.reached_music_2 = true
 		end
-		if not self.reached_music_fadeout_2 and self.score >= 670 then
+		if not self.reached_music_fadeout_2
+				and self.level == self.skin_change_2 - 1
+				and self.moves_until_next_level < 10 then
 			music(-1, 4000)
 			self.reached_music_fadeout_2 = true
 		end
-		if not self.reached_music_3 and self.score >= 700 then
+		if not self.reached_music_3 and self.level == self.skin_change_2 then
 			music(song.song_3)
 			self.reached_music_3 = true
 		end
 	end
 
 	-- background wipe transition
-	if self.score >= 270 and self.score < 300 or self.score >= 670 and self.score < 700 then
+	if (self.level == self.skin_change_1 - 1 or self.level == self.skin_change_2 - 1)
+			and self.moves_until_next_level < 10 then
 		if self.background_wipe_height < 128 then
 			self.background_wipe_height += self.background_wipe_speed
 		end
@@ -1392,14 +1401,15 @@ end
 
 function state.game:draw_background()
 	if self.background_mode == background_mode.auto then
-		if self.score >= 700 then
+		if self.level >= self.skin_change_2 then
 			self:draw_background_3()
-		elseif self.score >= 300 then
+		elseif self.level >= self.skin_change_1 then
 			self:draw_background_2()
 		else
 			self:draw_background_1()
 		end
-		if self.score >= 270 and self.score < 300 or self.score >= 670 and self.score < 700 then
+		if (self.level == self.skin_change_1 - 1 or self.level == self.skin_change_2 - 1)
+			and self.moves_until_next_level < 10 then
 			rectfill(0, 0, 128, self.background_wipe_height, 0)
 		else
 			rectfill(0, 128 - self.background_wipe_height, 128, 128, 0)
@@ -1430,6 +1440,7 @@ function state.game:draw()
 		effect:draw()
 	end
 	clip()
+	print(self.level, 0, 0, 7)
 end
 
 -->8
