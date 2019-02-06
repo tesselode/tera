@@ -282,7 +282,7 @@ song = {
 }
 
 -- save data locations
-save = {
+save_location = {
 	high_score = 0,
 	unlock_progress = 8,
 	background = 32,
@@ -682,8 +682,8 @@ end
 function state.game:enter(previous)
 	self:init_board()
 	self:init_next_queue()
-	self.inverted_rotation = dget(save.rotation) == 1
-	self.sonic_drop = dget(save.hard_drop) == 1
+	self.inverted_rotation = dget(save_location.rotation) == 1
+	self.sonic_drop = dget(save_location.hard_drop) == 1
 	self.current_tetromino = nil
 	self.score = 0
 	self.time = 0
@@ -712,8 +712,8 @@ function state.game:enter(previous)
 	self.spins = 0
 
 	-- cosmetic
-	self.background_mode = dget(save.background)
-	self.music_mode = dget(save.music)
+	self.background_mode = dget(save_location.background)
+	self.music_mode = dget(save_location.music)
 	music(-1)
 	self.play_tetromino_sound = false
 	self.effects = {}
@@ -846,9 +846,9 @@ function state.game:place_current_tetromino(hard_drop, top_out)
 
 	-- level-based unlocks
 	if self.level >= self.skin_change_2 then
-		dset(save.unlock_progress, 2)
+		dset(save_location.unlock_progress, 2)
 	elseif self.level >= self.skin_change_1 then
-		dset(save.unlock_progress, 1)
+		dset(save_location.unlock_progress, 1)
 	end
 end
 
@@ -1462,10 +1462,10 @@ state.lose = {
 }
 
 function state.lose:enter(previous)
-	self.previous_high_score = dget(save.high_score)
-	self.is_new_high_score = state.game.score > dget(save.high_score)
+	self.previous_high_score = dget(save_location.high_score)
+	self.is_new_high_score = state.game.score > dget(save_location.high_score)
 	if self.is_new_high_score then
-		dset(save.high_score, state.game.score)
+		dset(save_location.high_score, state.game.score)
 	end
 
 	self.menu = class.menu {
@@ -1664,7 +1664,7 @@ function state.title:init_options_menu()
 	self.menu = class.menu {
 		{
 			text = function()
-				local unlock_progress = dget(save.unlock_progress)
+				local unlock_progress = dget(save_location.unlock_progress)
 				if self.selected_background == background_mode.auto then
 					return '⬅️ background: auto ➡️'
 				elseif self.selected_background == background_mode.bg_1 then
@@ -1689,19 +1689,19 @@ function state.title:init_options_menu()
 				self.selected_background += dir
 				if self.selected_background < 0 then self.selected_background = 4 end
 				if self.selected_background > 4 then self.selected_background = 0 end
-				local unlock_progress = dget(save.unlock_progress)
+				local unlock_progress = dget(save_location.unlock_progress)
 				if self.selected_background == background_mode.bg_2 and unlock_progress < 1 then
 					return
 				end
 				if self.selected_background == background_mode.bg_3 and unlock_progress < 2 then
 					return
 				end
-				dset(save.background, self.selected_background)
+				dset(save_location.background, self.selected_background)
 			end
 		},
 		{
 			text = function()
-				local unlock_progress = dget(save.unlock_progress)
+				local unlock_progress = dget(save_location.unlock_progress)
 				if self.selected_music == music_mode.auto then
 					return '⬅️ music: auto ➡️'
 				elseif self.selected_music == music_mode.music_1 then
@@ -1726,36 +1726,36 @@ function state.title:init_options_menu()
 				self.selected_music += dir
 				if self.selected_music < 0 then self.selected_music = 4 end
 				if self.selected_music > 4 then self.selected_music = 0 end
-				local unlock_progress = dget(save.unlock_progress)
+				local unlock_progress = dget(save_location.unlock_progress)
 				if self.selected_music == music_mode.music_2 and unlock_progress < 1 then
 					return
 				end
 				if self.selected_music == music_mode.music_3 and unlock_progress < 2 then
 					return
 				end
-				dset(save.music, self.selected_music)
+				dset(save_location.music, self.selected_music)
 			end
 		},
 		{
 			text = function()
-				return dget(save.rotation) == 0 and '⬅️ rotation: normal ➡️' or '⬅️ rotation: inverted ➡️'
+				return dget(save_location.rotation) == 0 and '⬅️ rotation: normal ➡️' or '⬅️ rotation: inverted ➡️'
 			end,
 			change = function(dir)
-				dset(save.rotation, dget(save.rotation) == 0 and 1 or 0)
+				dset(save_location.rotation, dget(save_location.rotation) == 0 and 1 or 0)
 			end
 		},
 		{
 			text = function()
-				return dget(save.hard_drop) == 0 and '⬅️ hard drop: normal ➡️' or '⬅️ hard drop: sonic ➡️'
+				return dget(save_location.hard_drop) == 0 and '⬅️ hard drop: normal ➡️' or '⬅️ hard drop: sonic ➡️'
 			end,
 			change = function(dir)
-				dset(save.hard_drop, dget(save.hard_drop) == 0 and 1 or 0)
+				dset(save_location.hard_drop, dget(save_location.hard_drop) == 0 and 1 or 0)
 			end
 		},
 		{
 			text = function() return 'back' end,
 			confirm = function()
-				local unlock_progress = dget(save.unlock_progress)
+				local unlock_progress = dget(save_location.unlock_progress)
 				if (self.selected_background == 2 and unlock_progress < 1)
 						or (self.selected_background == 3 and unlock_progress < 2)
 						or (self.selected_music == 2 and unlock_progress < 1)
@@ -1772,9 +1772,9 @@ end
 
 function state.title:enter()
 	self:init_main_menu()
-	self.selected_background = dget(save.background)
-	self.selected_music = dget(save.music)
-	self.high_score = dget(save.high_score)
+	self.selected_background = dget(save_location.background)
+	self.selected_music = dget(save_location.music)
+	self.high_score = dget(save_location.high_score)
 
 	-- cosmetic
 	music(song.title)
@@ -1825,16 +1825,16 @@ function state.title:update()
 end
 
 function state.title:draw()
-	if self.cover then
+	if self.label then
 		cls()
 	end
 
-	if not self.cover then
+	if not self.label then
 		camera(0, -(128 - 128 * self.enter_animation_progress))
 	end
 
 	-- title
-	if self.cover then
+	if self.label then
 	 rectfill(0, -256, 128, 76, 1)
 	else
  	rectfill(0, -256, 128, 20, 1)
@@ -1843,7 +1843,7 @@ function state.title:draw()
 		rectfill(r.x, r.y, r.x + r.w, r.y + r.h, r.c)
 	end
 	local ox, oy
-	if self.cover then
+	if self.label then
   ox, oy = 4, 20
  else
   ox = 4 + 16 * sin(time() / 12)
@@ -1853,25 +1853,25 @@ function state.title:draw()
 	printf('mind', 80 + ox, 10 + oy, 7, 'left', 1)
 	printf('over', 80 + ox, 18 + oy, 7, 'left', 1)
 	printf('matter', 80 + ox, 26 + oy, 6, 'left', 1)
-	if not self.cover then
+	if not self.label then
  	printf('best: ' .. self.high_score, 64 - ox, 40 + oy, 14, 'center', 2)
  end
 
 	-- divider
 	rectfill(0, 76, 128, 256, 0)
-	oy = self.cover and 0 or 3 * sin(time() / 20)
+	oy = self.label and 0 or 3 * sin(time() / 20)
 	fillp(0b1000010000100001)
 	rectfill(0, 72 + oy, 128, 76 + oy, 0x01)
-	oy = self.cover and 0 or 3 * sin(time() / 19 + .1)
+	oy = self.label and 0 or 3 * sin(time() / 19 + .1)
 	fillp(0b1010010110100101)
 	rectfill(0, 76 + oy, 128, 80 + oy, 0x01)
-	oy = self.cover and 0 or 3 * sin(time() / 18 + .2)
+	oy = self.label and 0 or 3 * sin(time() / 18 + .2)
 	fillp(0b0100001000011000)
 	rectfill(0, 80 + oy, 128, 84 + oy, 0x10)
 	fillp()
 
 	-- menu
-	if not self.cover then
+	if not self.label then
  	self.menu:draw(92)
  end
 
@@ -2215,4 +2215,3 @@ __music__
 00 41424344
 00 191a1b1c
 04 411e1d44
-
