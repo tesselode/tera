@@ -468,43 +468,36 @@ end
 function class.line_clear_message:update()
 	self.y += (self.target_y - self.y) * .1
 	self.life -= 1
-	if self.life <= 0 then
-		self.dead = true
-	end
+	self.dead = self.life <= 0
 end
 
 function class.line_clear_message:draw()
 	local color = self.life < 3 and 1
-						 or self.life < 7 and 5
-				 or self.life < 12 and 6
-				 or 7
+			   or self.life < 7 and 5
+			   or self.life < 12 and 6
+			   or 7
 	local outline_color = self.life < 3 and 0 or 1
 	printf(self.text, self.x, self.y, color, 'center', outline_color)
 end
 
 -- level up message
 
-class.level_up_message = new_class {
-	duration = 180,
-}
+class.level_up_message = new_class()
 
 function class.level_up_message:new()
-	self.life = self.duration
+	self.life = 180
 	self.arrow_y_offset = 16
 end
 
 function class.level_up_message:update()
 	self.arrow_y_offset -= self.arrow_y_offset * .1
 	self.life -= 1
-	if self.life <= 0 then self.dead = true end
+	self.dead = self.life <= 0
 end
 
 function class.level_up_message:draw()
-	camera(-8, -108)
-	sspr(112, 0, 16, 16, 0, self.arrow_y_offset)
-	local color = time() % 1 > .5 and 7 or 12
-	printf('level up', 8, 6, color, 'center', 0)
-	camera()
+	sspr(112, 0, 16, 16, 8, 108 + self.arrow_y_offset)
+	printf('level up', 16, 114, time() % 1 > .5 and 7 or 12, 'center', 0)
 end
 
 -- menu
