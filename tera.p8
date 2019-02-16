@@ -470,10 +470,10 @@ end
 
 function class.line_clear_animation:draw()
 	local color = self.time > 26 and 1
-	           or self.time > 23 and 2
-			   or self.time > 20 and 4
-			   or self.time > 17 and 6
-			   or 7
+						 or self.time > 23 and 2
+				 or self.time > 20 and 4
+				 or self.time > 17 and 6
+				 or 7
 	rectfill(self.x, self.y, self.x + self.width,
 		self.y + block_size, color)
 end
@@ -502,9 +502,9 @@ end
 
 function class.line_clear_message:draw()
 	local color = self.life < 3 and 1
-	           or self.life < 7 and 5
-			   or self.life < 12 and 6
-			   or 7
+						 or self.life < 7 and 5
+				 or self.life < 12 and 6
+				 or 7
 	local outline_color = self.life < 3 and 0 or 1
 	printf(self.text, self.x, self.y, color, 'center', outline_color)
 end
@@ -650,8 +650,8 @@ end
 
 function state.game:get_spawn_delay()
 	return self.level < 13 and 15
-	    or self.level < 23 and 15 - self.level
-	    or 5
+			or self.level < 23 and 15 - self.level
+			or 5
 end
 
 function state.game:get_gravity_interval()
@@ -1844,9 +1844,9 @@ function state.title:draw()
 	end
 	local ox, oy
 	if self.label then
-  ox, oy = 4, 20
+	ox, oy = 4, 20
  else
-  ox = 4 + 16 * sin(time() / 12)
+	ox = 4 + 16 * sin(time() / 12)
 	 oy = 20 + 4 * cos(time() / 17)
 	end
 	sspr(16, 32, 32, 16, 12 + ox, 4 + oy, 64, 32)
