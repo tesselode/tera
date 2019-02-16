@@ -1304,7 +1304,7 @@ function state.game:draw_hud()
 		self:draw_tetromino(self.held, 1, 0, 1, false, true)
 		camera()
 	else
-		printf('🅾️+❎', 16, 26, time() % 2 > 1 and 15 or 7, 'center', 0)
+		printf('🅾️+❎', 12, 26, time() % 2 > 1 and 15 or 7, 'center', 0)
 	end
 
 	-- score
