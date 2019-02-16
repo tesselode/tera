@@ -1388,6 +1388,17 @@ function state.lose:enter(previous)
 	self.menu.disabled = true
 	self.menu.hidden = true
 
+	-- stats
+	self.stats = {
+		{time = 180, text = 'moves', value = state.game.moves},
+		{time = 200, text = 'singles', value = state.game.line_clears[1]},
+		{time = 220, text = 'doubles', value = state.game.line_clears[2]},
+		{time = 240, text = 'triples', value = state.game.line_clears[3]},
+		{time = 260, text = 'teras', value = state.game.line_clears[4]},
+		{time = 280, text = 'spins', value = state.game.spins},
+		{time = 320, text = 'score', value = state.game.score, pink = true, sound = sound.line_clear[4], oy = 8},
+	}
+
 	-- cosmetic
 	self.black_out_height = 0
 	self.gray_out_timer = self.gray_out_animation_interval
@@ -1425,13 +1436,11 @@ function state.lose:update()
 		end
 	end
 
-	-- results popups
-	if self.time == 180 or self.time == 200 or self.time == 220
-			or self.time == 240 or self.time == 260 or self.time == 280 then
-		sfx(sound.rotate_ccw)
-	end
-	if self.time == 320 then
-		sfx(sound.tetris)
+	-- results popup sounds
+	for stat in all(self.stats) do
+		if self.time == stat.time then
+			sfx(stat.sound or sound.rotate_ccw)
+		end
 	end
 
 	-- menu
@@ -1474,42 +1483,14 @@ function state.lose:draw()
 			self.results_background_height, 0)
 	end
 	state.game:draw_board_border()
-	if self.time > 180 then
-		camera(0, -max(184 - self.time, 0))
-		printf('moves', 38, 16, 6, 'left', 0)
-		draw_fancy_number(state.game.moves, 90, 15, false, true)
+	for i = 1, #self.stats do
+		local stat = self.stats[i]
+		if self.time > stat.time then
+			local oy = 8 * (i - 1) + (stat.oy or 0) + max(stat.time + 4 - self.time, 0)
+			printf(stat.text, 38, 16 + oy, 6, 'left', 0)
+			draw_fancy_number(stat.value, 90, 15 + oy, false, not stat.pink)
+		end
 	end
-	if self.time > 200 then
-		camera(0, -max(204 - self.time, 0))
-		printf('singles', 38, 24, 6, 'left', 0)
-		draw_fancy_number(state.game.line_clears[1], 90, 23, false, true)
-	end
-	if self.time > 220 then
-		camera(0, -max(224 - self.time, 0))
-		printf('doubles', 38, 32, 6, 'left', 0)
-		draw_fancy_number(state.game.line_clears[2], 90, 31, false, true)
-	end
-	if self.time > 240 then
-		camera(0, -max(244 - self.time, 0))
-		printf('triples', 38, 40, 6, 'left', 0)
-		draw_fancy_number(state.game.line_clears[3], 90, 39, false, true)
-	end
-	if self.time > 260 then
-		camera(0, -max(264 - self.time, 0))
-		printf('teras', 38, 48, 6, 'left', 0)
-		draw_fancy_number(state.game.line_clears[4], 90, 47, false, true)
-	end
-	if self.time > 280 then
-		camera(0, -max(284 - self.time, 0))
-		printf('spins', 38, 56, 6, 'left', 0)
-		draw_fancy_number(state.game.spins, 90, 55, false, true)
-	end
-	if self.time > 320 then
-		camera(0, -max(324 - self.time, 0))
-		printf('score', 38, 72, 7, 'left', 0)
-		draw_fancy_number(state.game.score, 90, 71)
-	end
-	camera()
 	if self.time > 360 then
 		if self.is_new_high_score then
 			local phase = cos(time() / 2)
