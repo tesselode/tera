@@ -1733,27 +1733,27 @@ function state.title:draw()
 
 	-- title
 	if self.label then
-	 rectfill(0, -256, 128, 76, 1)
+		rectfill(0, -256, 128, 76, 1)
 	else
- 	rectfill(0, -256, 128, 20, 1)
- end
+ 		rectfill(0, -256, 128, 20, 1)
+ 	end
 	for r in all(self.rectangles) do
 		rectfill(r.x, r.y, r.x + r.w, r.y + r.h, r.c)
 	end
 	local ox, oy
 	if self.label then
-	ox, oy = 4, 20
- else
-	ox = 4 + 16 * sin(time() / 12)
-	 oy = 20 + 4 * cos(time() / 17)
+		ox, oy = 4, 20
+ 	else
+		ox = 4 + 16 * sin(time() / 12)
+		oy = 20 + 4 * cos(time() / 17)
 	end
 	sspr(16, 32, 32, 16, 12 + ox, 4 + oy, 64, 32)
 	printf('mind', 80 + ox, 10 + oy, 7, 'left', 1)
 	printf('over', 80 + ox, 18 + oy, 7, 'left', 1)
 	printf('matter', 80 + ox, 26 + oy, 6, 'left', 1)
 	if not self.label then
- 	printf('best: ' .. self.high_score, 64 - ox, 40 + oy, 14, 'center', 2)
- end
+ 		printf('best: ' .. self.high_score, 64 - ox, 40 + oy, 14, 'center', 2)
+ 	end
 
 	-- divider
 	rectfill(0, 76, 128, 256, 0)
@@ -1770,8 +1770,8 @@ function state.title:draw()
 
 	-- menu
 	if not self.label then
- 	self.menu:draw(92)
- end
+		self.menu:draw(92)
+	end
 
 	camera()
 
