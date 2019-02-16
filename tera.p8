@@ -251,10 +251,7 @@ local tetrominoes = {
 
 -- sfx
 sound = {
-	tetris = 48,
-	triple = 49,
-	double = 50,
-	single = 51,
+	line_clear = {51, 50, 49, 48},
 	soft_drop = 52,
 	illegal = 53,
 	hard_drop = 54,
@@ -587,6 +584,7 @@ state.game = {
 	background_wipe_speed = 1,
 	gravity_intervals = {45, 20, 10, 7, 4, 2, 1, .5, .1},
 	lock_delays = {30, 28, 26, 24, 22, 20, 18, 16},
+	point_values = {{3, 6, 10, 15}, {5, 10, 15, 20}},
 }
 
 function state.game:init_board()
@@ -600,8 +598,6 @@ function state.game:init_board()
 end
 
 function state.game:populate_next_queue()
-	self.next_queue = self.next_queue or {}
-
 	-- create a bag of all the possible tetrominos
 	local shapes = {}
 	for shape, _ in pairs(tetrominoes) do
@@ -632,6 +628,7 @@ end
 
 function state.game:enter(previous)
 	self:init_board()
+	self.next_queue = {}
 	self:populate_next_queue()
 	self.inverted_rotation = dget(save_location.rotation) == 1
 	self.sonic_drop = dget(save_location.hard_drop) == 1
@@ -656,10 +653,7 @@ function state.game:enter(previous)
 	self.countdown = 80
 
 	-- stats
-	self.singles = 0
-	self.doubles = 0
-	self.triples = 0
-	self.tetrises = 0
+	self.line_clears = {0, 0, 0, 0}
 	self.spins = 0
 
 	-- cosmetic
@@ -945,65 +939,28 @@ function state.game:clear_lines()
 end
 
 function state.game:detect_filled_lines()
-	local filled_lines = 0
 	for y = board_height, 1, -1 do
 		if self:is_line_full(y) then
 			add(self.filled_lines, y)
 			add(self.effects, class.line_clear_animation(self:board_to_screen(1, y)))
-			filled_lines += 1
 		end
 	end
-	if filled_lines > 0 then
+	if #self.filled_lines > 0 then
 		self.line_clear_animation_timer = class.line_clear_animation.duration
-		if filled_lines >= 4 then
-			if self.is_spun then
-				self.score += 20
-				self.spins += 1
-			else
-				self.score += 15
-			end
-			self.tetrises += 1
-			local l = self.filled_lines
-			local y = (l[1] + l[2] + l[3] + l[4]) / 4
-			add(self.effects, class.line_clear_message('tera', self:board_to_screen(board_width / 2 + 1, y)))
-			sfx(sound.tetris)
-		elseif filled_lines >= 0 then
-			if self.is_spun then
-				self.spins += 1
-				local y = 0
-				for l in all(self.filled_lines) do y += l end
-				y /= filled_lines
-				add(self.effects, class.line_clear_message('spin', self:board_to_screen(board_width / 2 + 1, y)))
-				sfx(sound.spin_line_clear)
-			end
-			if filled_lines == 3 then
-				self.triples += 1
-				if self.is_spun then
-					self.score += 15
-				else
-					self.score += 10
-				end
-				sfx(sound.triple)
-			elseif filled_lines == 2 then
-				self.doubles += 1
-				if self.is_spun then
-					self.score += 10
-				else
-					self.score += 6
-				end
-				sfx(sound.double)
-			elseif filled_lines == 1 then
-				self.singles += 1
-				if self.is_spun then
-					self.score += 5
-				else
-					self.score += 3
-				end
-				sfx(sound.single)
-			end
+		self.score += self.point_values[self.is_spun and 2 or 1][#self.filled_lines]
+		self.line_clears[#self.filled_lines] += 1
+		sfx(sound.line_clear[#self.filled_lines])
+		local message_x, message_y = self:board_to_screen(board_width / 2 + 1,
+			(self.filled_lines[1] + self.filled_lines[#self.filled_lines]) / 2)
+		if #self.filled_lines >= 4 then
+			add(self.effects, class.line_clear_message('tera', message_x, message_y))
+		elseif self.is_spun then
+			self.spins += 1
+			add(self.effects, class.line_clear_message('spin', message_x, message_y))
+			sfx(sound.spin_line_clear)
 		end
 	end
-	return filled_lines > 0
+	return #self.filled_lines > 0
 end
 
 function state.game:input_shift(dir)
@@ -1532,22 +1489,22 @@ function state.lose:draw()
 	if self.time > 200 then
 		camera(0, -max(204 - self.time, 0))
 		printf('singles', 38, 24, 6, 'left', 0)
-		draw_fancy_number(state.game.singles, 90, 23, false, true)
+		draw_fancy_number(state.game.line_clears[1], 90, 23, false, true)
 	end
 	if self.time > 220 then
 		camera(0, -max(224 - self.time, 0))
 		printf('doubles', 38, 32, 6, 'left', 0)
-		draw_fancy_number(state.game.doubles, 90, 31, false, true)
+		draw_fancy_number(state.game.line_clears[2], 90, 31, false, true)
 	end
 	if self.time > 240 then
 		camera(0, -max(244 - self.time, 0))
 		printf('triples', 38, 40, 6, 'left', 0)
-		draw_fancy_number(state.game.triples, 90, 39, false, true)
+		draw_fancy_number(state.game.line_clears[3], 90, 39, false, true)
 	end
 	if self.time > 260 then
 		camera(0, -max(264 - self.time, 0))
 		printf('teras', 38, 48, 6, 'left', 0)
-		draw_fancy_number(state.game.tetrises, 90, 47, false, true)
+		draw_fancy_number(state.game.line_clears[4], 90, 47, false, true)
 	end
 	if self.time > 280 then
 		camera(0, -max(284 - self.time, 0))
