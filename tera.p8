@@ -1158,15 +1158,10 @@ end
 
 function state.game:draw_block(board_x, board_y, shape, ghost)
 	local x, y = self:board_to_screen(board_x, board_y)
-	if shape == 'x' then
-		-- used for the game over effect
-		-- and garbage if i ever implement that
-		spr(8, x, y)
-	elseif ghost then
-		spr(tetrominoes[shape].sprite + 16, x, y)
-	else
-		spr(tetrominoes[shape].sprite, x, y)
-	end
+	local s = shape == 'x' and 8
+	       or ghost and tetrominoes[shape].sprite + 16
+		   or tetrominoes[shape].sprite
+	spr(s, x, y)
 end
 
 function state.game:draw_board_contents()
@@ -1281,12 +1276,10 @@ end
 function state.game:draw_background_1()
 	for y = 0, 128, 16 do
 		local t = 1/20 * (time() + y / 4)
-		circfill(64 + 32 * sin(t), y, 16 + 14 * sin(t / 3), 2)
-		t += 1/3
-		circfill(64 + 32 * sin(t), y, 16 + 14 * sin(t / 3), 1)
-		t += 1/3
-		circfill(64 + 32 * sin(t), y, 16 + 14 * sin(t / 3), 0)
-		camera()
+		for color = 2, 0, -1 do
+			circfill(64 + 32 * sin(t), y, 16 + 14 * sin(t / 3), color)
+			t += 1/3
+		end
 	end
 end
 
@@ -1324,7 +1317,7 @@ function state.game:draw_background()
 			self:draw_background_1()
 		end
 		if (self.level == self.skin_change_1 - 1 or self.level == self.skin_change_2 - 1)
-			and self.moves_until_next_level < self.skin_change_dramatic_pause then
+				and self.moves_until_next_level < self.skin_change_dramatic_pause then
 			rectfill(0, 0, 128, self.background_wipe_height, 0)
 		else
 			rectfill(0, 128 - self.background_wipe_height, 128, 128, 0)
