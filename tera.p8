@@ -585,6 +585,8 @@ state.game = {
 	skin_change_dramatic_pause = 8,
 	score_bounce_amount = 4,
 	background_wipe_speed = 1,
+	gravity_intervals = {45, 20, 10, 7, 4, 2, 1, .5, .1},
+	lock_delays = {30, 28, 26, 24, 22, 20, 18, 16},
 }
 
 function state.game:init_board()
@@ -621,28 +623,11 @@ function state.game:get_spawn_delay()
 end
 
 function state.game:get_gravity_interval()
-	if     self.level < 2 then return 45
-	elseif self.level < 3 then return 20
-	elseif self.level < 4 then return 10
-	elseif self.level < 5 then return 7
-	elseif self.level < 6 then return 4
-	elseif self.level < 7 then return 2
-	elseif self.level < 8 then return 1
-	elseif self.level < 9 then return .5
-	else                       return .1
-	end
+	return self.gravity_intervals[min(self.level, #self.gravity_intervals)]
 end
 
 function state.game:get_lock_delay()
-	if     self.level < 9  then return 30
-	elseif self.level < 10  then return 28
-	elseif self.level < 11 then return 26
-	elseif self.level < 12 then return 24
-	elseif self.level < 13 then return 22
-	elseif self.level < 14 then return 20
-	elseif self.level < 15 then return 18
-	else                          return 16
-	end
+	return self.lock_delays[mid(1, self.level - 7, #self.lock_delays)]
 end
 
 function state.game:enter(previous)
