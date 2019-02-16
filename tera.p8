@@ -600,10 +600,15 @@ function state.game:init_board()
 end
 
 function state.game:populate_next_queue()
+	self.next_queue = self.next_queue or {}
+
+	-- create a bag of all the possible tetrominos
 	local shapes = {}
 	for shape, _ in pairs(tetrominoes) do
 		add(shapes, shape)
 	end
+
+	-- add them to the next queue in a random order
 	for _ = 1, #shapes do
 		local n = ceil(rnd(#shapes))
 		add(self.next_queue, shapes[n])
@@ -611,15 +616,10 @@ function state.game:populate_next_queue()
 	end
 end
 
-function state.game:init_next_queue()
-	self.next_queue = {}
-	self:populate_next_queue()
-end
-
 function state.game:get_spawn_delay()
 	return self.level < 13 and 15
-			or self.level < 23 and 15 - self.level
-			or 5
+		or self.level < 23 and 15 - self.level
+		or 5
 end
 
 function state.game:get_gravity_interval()
@@ -632,7 +632,7 @@ end
 
 function state.game:enter(previous)
 	self:init_board()
-	self:init_next_queue()
+	self:populate_next_queue()
 	self.inverted_rotation = dget(save_location.rotation) == 1
 	self.sonic_drop = dget(save_location.hard_drop) == 1
 	self.current_tetromino = nil
@@ -712,6 +712,12 @@ function state.game:can_tetromino_fit(shape, x, y, orientation)
 	return true
 end
 
+function state.game:can_current_tetromino_fit(dx, dy, orientation)
+	local c = self.current_tetromino
+	if not c then return false end
+	return self:can_tetromino_fit(c.shape, c.x + (dx or 0), c.y + (dy or 0), orientation or c.orientation)
+end
+
 function state.game:get_next_shape()
 	local shape = self.next_queue[1]
 	del(self.next_queue, shape)
@@ -729,11 +735,10 @@ function state.game:spawn_tetromino(shape)
 		y = shape == 'i' and 20 or 21,
 		orientation = 1,
 	}
-	local c = self.current_tetromino
-	if self:can_tetromino_fit(c.shape, c.x, c.y - 1, c.orientation) then
-		c.y = c.y - 1
+	if self:can_current_tetromino_fit(0, -1) then
+		self.current_tetromino.y = self.current_tetromino.y - 1
 	end
-	if not self:can_tetromino_fit(c.shape, c.x, c.y, c.orientation) then
+	if not self:can_current_tetromino_fit() then
 		self:place_current_tetromino(false, true)
 		switch_state(state.lose)
 	end
@@ -804,10 +809,9 @@ function state.game:place_current_tetromino(hard_drop, top_out)
 end
 
 function state.game:apply_gravity(soft_drop)
-	local c = self.current_tetromino
-	if not c then return end
-	if self:can_tetromino_fit(c.shape, c.x, c.y - 1, c.orientation) then
-		c.y -= 1
+	if not self.current_tetromino then return end
+	if self:can_current_tetromino_fit(0, -1) then
+		self.current_tetromino.y -= 1
 		sfx(sound.fall)
 	else
 		if soft_drop then
@@ -867,10 +871,9 @@ function state.game:update_gravity(soft_drop)
 end
 
 function state.game:shift(dir)
-	local c = self.current_tetromino
-	if not c then return end
-	if self:can_tetromino_fit(c.shape, c.x + dir, c.y, c.orientation) then
-		c.x += dir
+	if not self.current_tetromino then return end
+	if self:can_current_tetromino_fit(dir) then
+		self.current_tetromino.x += dir
 		self.lock_timer = -1
 		return true
 	end
@@ -893,7 +896,7 @@ function state.game:rotate(ccw)
 	local tests = tetrominoes[c.shape].kick[c.orientation][dir]
 	for test in all(tests) do
 		local dx, dy = test[1], test[2]
-		if self:can_tetromino_fit(c.shape, c.x + dx, c.y + dy, new_orientation) then
+		if self:can_current_tetromino_fit(dx, dy, new_orientation) then
 			c.x += dx
 			c.y += dy
 			c.orientation = new_orientation
@@ -901,11 +904,11 @@ function state.game:rotate(ccw)
 
 			-- detect spins
 			self.is_spun = true
-			if self:can_tetromino_fit(c.shape, c.x - 1, c.y, c.orientation) then
+			if self:can_current_tetromino_fit(-1) then
 				self.is_spun = false
-			elseif self:can_tetromino_fit(c.shape, c.x + 1, c.y, c.orientation) then
+			elseif self:can_current_tetromino_fit(1) then
 				self.is_spun = false
-			elseif self:can_tetromino_fit(c.shape, c.x, c.y + 1, c.orientation) then
+			elseif self:can_current_tetromino_fit(0, 1) then
 				self.is_spun = false
 			end
 			if self.is_spun then sfx(sound.spin) end
