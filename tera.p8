@@ -321,29 +321,11 @@ local state = {}
 -- utilities
 
 -- text
-local glyphs = '…∧░➡️⧗▤⬆️☉🅾️◆█★⬇️✽●♥웃⌂⬅️▥❎🐱ˇ▒♪😐'
-
-local function get_text_length(text)
-	local length = 0
-	for i = 1, #text do
-		local character = sub(text, i, i)
-		local is_glyph = false
-		for j = 1, #glyphs do
-			if character == sub(glyphs, j, j) then
-				is_glyph = true
-				break
-			end
-		end
-		length += (is_glyph and 8 or 4)
-	end
-	return length
-end
-
 local function printf(text, x, y, color, align, outline_color)
 	if align == 'center' then
-		x -= get_text_length(text) / 2
+		x -= #text * 2
 	elseif align == 'right' then
-		x -= get_text_length(text)
+		x -= #text * 4
 	end
 	if outline_color then
 		for ox = -1, 1 do
@@ -1666,23 +1648,23 @@ function state.title:init_options_menu()
 			text = function()
 				local unlock_progress = dget(save_location.unlock_progress)
 				if self.selected_background == background_mode.auto then
-					return '⬅️ background: auto ➡️'
+					return '⬅️ background: auto ➡️  '
 				elseif self.selected_background == background_mode.bg_1 then
-					return '⬅️ background: chill ➡️'
+					return '⬅️ background: chill ➡️  '
 				elseif self.selected_background == background_mode.bg_2 then
 					if unlock_progress > 0 then
-						return '⬅️ background: slippy ➡️'
+						return '⬅️ background: slippy ➡️  '
 					else
-						return '⬅️ background: ???? ➡️'
+						return '⬅️ background: ???? ➡️  '
 					end
 				elseif self.selected_background == background_mode.bg_3 then
 					if unlock_progress > 1 then
-						return '⬅️ background: wavy ➡️'
+						return '⬅️ background: wavy ➡️  '
 					else
-						return '⬅️ background: ???? ➡️'
+						return '⬅️ background: ???? ➡️  '
 					end
 				elseif self.selected_background == background_mode.off then
-					return '⬅️ background: off ➡️'
+					return '⬅️ background: off ➡️  '
 				end
 			end,
 			change = function(dir)
@@ -1703,23 +1685,23 @@ function state.title:init_options_menu()
 			text = function()
 				local unlock_progress = dget(save_location.unlock_progress)
 				if self.selected_music == music_mode.auto then
-					return '⬅️ music: auto ➡️'
+					return '⬅️ music: auto ➡️  '
 				elseif self.selected_music == music_mode.music_1 then
-					return '⬅️ music: gentle ➡️'
+					return '⬅️ music: gentle ➡️  '
 				elseif self.selected_music == music_mode.music_2 then
 					if unlock_progress > 0 then
-						return '⬅️ music: groovy ➡️'
+						return '⬅️ music: groovy ➡️  '
 					else
-						return '⬅️ music: ???? ➡️'
+						return '⬅️ music: ???? ➡️  '
 					end
 				elseif self.selected_music == music_mode.music_3 then
 					if unlock_progress > 1 then
-						return '⬅️ music: hectic ➡️'
+						return '⬅️ music: hectic ➡️  '
 					else
-						return '⬅️ music: ???? ➡️'
+						return '⬅️ music: ???? ➡️  '
 					end
 				elseif self.selected_music == music_mode.off then
-					return '⬅️ music: off ➡️'
+					return '⬅️ music: off ➡️  '
 				end
 			end,
 			change = function(dir)
@@ -1738,7 +1720,7 @@ function state.title:init_options_menu()
 		},
 		{
 			text = function()
-				return dget(save_location.rotation) == 0 and '⬅️ rotation: normal ➡️' or '⬅️ rotation: inverted ➡️'
+				return dget(save_location.rotation) == 0 and '⬅️ rotation: normal ➡️  ' or '⬅️ rotation: inverted ➡️  '
 			end,
 			change = function(dir)
 				dset(save_location.rotation, dget(save_location.rotation) == 0 and 1 or 0)
@@ -1746,7 +1728,7 @@ function state.title:init_options_menu()
 		},
 		{
 			text = function()
-				return dget(save_location.hard_drop) == 0 and '⬅️ hard drop: normal ➡️' or '⬅️ hard drop: sonic ➡️'
+				return dget(save_location.hard_drop) == 0 and '⬅️ hard drop: normal ➡️  ' or '⬅️ hard drop: sonic ➡️  '
 			end,
 			change = function(dir)
 				dset(save_location.hard_drop, dget(save_location.hard_drop) == 0 and 1 or 0)
