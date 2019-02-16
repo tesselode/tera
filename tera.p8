@@ -422,7 +422,6 @@ end
 
 class.line_clear_animation = new_class {
 	duration = 28,
-	particle_spawn_interval = 2,
 }
 
 function class.line_clear_animation:new(x, y)
@@ -430,32 +429,24 @@ function class.line_clear_animation:new(x, y)
 	self.y = y
 	self.time = 0
 	self.width = 0
-	self.particle_spawn_timer = self.particle_spawn_interval
-	self.effects = {}
 end
 
 function class.line_clear_animation:update()
 	self.width += (board_width * block_size - self.width) / 3
-	if self.time < 20 then
-		self.particle_spawn_timer -= 1
-		while self.particle_spawn_timer <= 0 do
-			self.particle_spawn_timer += self.particle_spawn_interval
-			add(self.effects, class.particle(self.x + self.width, self.y, 7))
-			add(self.effects, class.particle(self.x + self.width, self.y + block_size, 7))
-		end
+	if self.time < 20 and self.time % 2 == 0 then
+		add(state.game.effects, class.particle(self.x + self.width, self.y, 7))
+		add(state.game.effects, class.particle(self.x + self.width, self.y + block_size, 7))
 	end
 	self.time += 1
-	if self.time >= self.duration then
-		self.dead = true
-	end
+	self.dead = self.time >= self.duration
 end
 
 function class.line_clear_animation:draw()
 	local color = self.time > 26 and 1
-						 or self.time > 23 and 2
-				 or self.time > 20 and 4
-				 or self.time > 17 and 6
-				 or 7
+			   or self.time > 23 and 2
+			   or self.time > 20 and 4
+			   or self.time > 17 and 6
+			   or 7
 	rectfill(self.x, self.y, self.x + self.width,
 		self.y + block_size, color)
 end
@@ -1139,12 +1130,6 @@ function state.game:update_cosmetic()
 	-- update visual effects
 	for effect in all(self.effects) do
 		effect:update()
-		if effect.effects then
-			for e in all(effect.effects) do
-				add(self.effects, e)
-				del(effect.effects, e)
-			end
-		end
 		if effect.dead then
 			del(self.effects, effect)
 		end
