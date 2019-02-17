@@ -620,7 +620,7 @@ end
 
 function state.game:get_spawn_delay()
 	return self.level < 13 and 15
-		or self.level < 23 and 15 - self.level
+		or self.level < 23 and 15 - (self.level - 12)
 		or 5
 end
 
