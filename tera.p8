@@ -637,7 +637,7 @@ function state.game:get_lock_delay()
 end
 
 function state.game:get_moves_per_level()
-	return self.mode == game_mode.time_attack and 30 or 40
+	return self.mode == game_mode.time_attack and 25 or 40
 end
 
 function state.game:enter(previous, mode)
@@ -786,7 +786,10 @@ function state.game:place_current_tetromino(hard_drop, top_out)
 		end
 	end
 	if not top_out then
-		self.score += 1
+		if self.mode == game_mode.survival or (self.mode == game_mode.time_attack and self.score ~= 499) then
+			self.score += 1
+			self.score_y_offset = self.score_bounce_amount
+		end
 		self.moves += 1
 		-- level up
 		self.moves_until_next_level -= 1
@@ -803,7 +806,6 @@ function state.game:place_current_tetromino(hard_drop, top_out)
 	self.spawn_timer = self:get_spawn_delay()
 	sfx(hard_drop and sound.hard_drop or sound.soft_drop)
 	self.play_tetromino_sound = true
-	self.score_y_offset = self.score_bounce_amount
 
 	-- reset some inputs
 	self.shift_repeat_direction = 0
@@ -963,6 +965,7 @@ function state.game:detect_filled_lines()
 	if #self.filled_lines > 0 then
 		self.line_clear_animation_timer = class.line_clear_animation.duration
 		self.score += self.point_values[self.is_spun and 2 or 1][#self.filled_lines]
+		self.score_y_offset = self.score_bounce_amount
 		self.line_clears[#self.filled_lines] += 1
 		sfx(sound.line_clear[#self.filled_lines])
 		local message_x, message_y = self:board_to_screen(board_width / 2 + 1,
