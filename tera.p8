@@ -288,7 +288,12 @@ save_location = {
 	rotation = 35,
 }
 
--- options enums
+-- enums
+game_mode = {
+	survival = 0,
+	time_attack = 1,
+}
+
 background_mode = {
 	auto = 0,
 	bg_1 = 1,
@@ -582,7 +587,6 @@ state.game = {
 	shift_first_repeat_time = 10,
 	shift_repeat_time = 1,
 	soft_drop_gravity = 2,
-	moves_per_level = 40,
 	skin_change_1 = 4,
 	skin_change_2 = 8,
 	skin_change_dramatic_pause = 8,
@@ -632,7 +636,12 @@ function state.game:get_lock_delay()
 	return self.lock_delays[mid(1, self.level - 7, #self.lock_delays)]
 end
 
-function state.game:enter(previous)
+function state.game:get_moves_per_level()
+	return self.mode == game_mode.time_attack and 30 or 40
+end
+
+function state.game:enter(previous, mode)
+	self.mode = mode
 	self:init_board()
 	self.next_queue = {}
 	self:populate_next_queue()
@@ -642,7 +651,7 @@ function state.game:enter(previous)
 	self.score = 0
 	self.time = 0
 	self.moves = 0
-	self.moves_until_next_level = self.moves_per_level
+	self.moves_until_next_level = self:get_moves_per_level()
 	self.level = 1
 	self.spawn_timer = self:get_spawn_delay()
 	self.shift_repeat_timer = -1
@@ -678,7 +687,7 @@ function state.game:enter(previous)
 
 	-- pause menu
 	menuitem(1, 'retry', function()
-		switch_state(state.game)
+		switch_state(state.game, self.mode)
 	end)
 	menuitem(2, 'back to title', function()
 		switch_state(state.title)
@@ -782,7 +791,7 @@ function state.game:place_current_tetromino(hard_drop, top_out)
 		-- level up
 		self.moves_until_next_level -= 1
 		if self.moves_until_next_level == 0 then
-			self.moves_until_next_level = self.moves_per_level
+			self.moves_until_next_level = self:get_moves_per_level()
 			self.level += 1
 			add(self.effects, class.level_up_message())
 			sfx(sound.level_up)
@@ -1528,8 +1537,19 @@ state.title = {}
 function state.title:init_main_menu()
 	self.menu = class.menu {
 		{
-			text = function() return 'play' end,
+			text = function() return 'survival' end,
 			confirm = function()
+				self.game_mode = game_mode.survival
+				self.transitioning = true
+				self.menu.disabled = true
+				music(-1)
+			end,
+			sound = sound.play,
+		},
+		{
+			text = function() return 'time attack' end,
+			confirm = function()
+				self.game_mode = game_mode.time_attack
 				self.transitioning = true
 				self.menu.disabled = true
 				music(-1)
@@ -1657,6 +1677,7 @@ end
 
 function state.title:enter()
 	self:init_main_menu()
+	self.game_mode = game_mode.survival
 	self.selected_background = dget(save_location.background)
 	self.selected_music = dget(save_location.music)
 	self.high_score = dget(save_location.high_score)
@@ -1704,7 +1725,7 @@ function state.title:update()
 	if self.transitioning then
 		self.transition_progress += 1/15
 		if self.transition_progress >= 3 then
-			switch_state(state.game)
+			switch_state(state.game, self.game_mode)
 		end
 	end
 end
