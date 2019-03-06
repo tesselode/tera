@@ -796,10 +796,6 @@ function state.game:place_current_tetromino(hard_drop, top_out)
 	self.play_tetromino_sound = true
 	self.score_y_offset = self.score_bounce_amount
 
-	-- reset some inputs
-	self.shift_repeat_direction = 0
-	self.shift_repeat_timer = -1
-
 	-- level-based unlocks
 	if self.level >= self.skin_change_2 then
 		dset(save_location.unlock_progress, 2)
