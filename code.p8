@@ -496,8 +496,8 @@ function class.level_up_message:update()
 end
 
 function class.level_up_message:draw()
-	sspr(112, 0, 16, 16, 8, 108 + self.arrow_y_offset)
-	printf('level up', 16, 114, time() % 1 > .5 and 7 or 12, 'center', 0)
+	sspr(112, 0, 16, 16, 8, 72 + self.arrow_y_offset)
+	printf('level up', 16, 78, time() % 1 > .5 and 7 or 12, 'center', 0)
 end
 
 -- menu
@@ -1243,7 +1243,7 @@ function state.game:draw_current_tetromino(ghost)
 end
 
 function state.game:draw_hud()
-	map(0, 0, 0, 0, 16, 16)
+	map(0, 0, 0, -4, 16, 16)
 
 	-- next pieces
 	camera(-67, 128 - 45)
@@ -1254,18 +1254,21 @@ function state.game:draw_hud()
 
 	-- held piece
 	if self.held then
-		camera(29, 128 - 33)
+		camera(29, 128 - 21)
 		self:draw_tetromino(self.held, 1, 0, 1, false, true)
 		camera()
 	else
-		printf('🅾️+❎', 12, 26, time() % 2 > 1 and 15 or 7, 'center', 0)
+		printf('🅾️+❎', 12, 14, time() % 2 > 1 and 15 or 7, 'center', 0)
 	end
 
 	-- score
-	draw_fancy_number(self.score, 27, 56 + self.score_y_offset)
+	draw_fancy_number(self.score, 27, 44 + self.score_y_offset)
+
+	-- level
+	draw_fancy_number(self.level, 27, 76, true)
 
 	-- time
-	draw_fancy_number(number_to_time(self.time), 27, 88, true)
+	draw_fancy_number(number_to_time(self.time), 27, 108, true)
 
 	-- countdown
 	if self.countdown > 0 and self.countdown < 60 then
