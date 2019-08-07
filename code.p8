@@ -41,8 +41,8 @@ local tetrominoes = {
 		blocks = {
 			{
 				'0000',
-				'1111',
 				'0000',
+				'1111',
 				'0000',
 			},
 			{
@@ -53,8 +53,8 @@ local tetrominoes = {
 			},
 			{
 				'0000',
-				'0000',
 				'1111',
+				'0000',
 				'0000',
 			},
 			{
@@ -95,24 +95,24 @@ local tetrominoes = {
 	l = {
 		blocks = {
 			{
+				'000',
+				'111',
 				'100',
-				'111',
-				'000',
 			},
 			{
+				'010',
+				'010',
 				'011',
-				'010',
-				'010',
 			},
 			{
-				'000',
-				'111',
 				'001',
+				'111',
+				'000',
 			},
 			{
-				'010',
-				'010',
 				'110',
+				'010',
+				'010',
 			},
 		},
 		kick = main_kick_data,
@@ -123,24 +123,24 @@ local tetrominoes = {
 	j = {
 		blocks = {
 			{
+				'000',
+				'111',
 				'001',
-				'111',
-				'000',
 			},
 			{
-				'010',
-				'010',
 				'011',
+				'010',
+				'010',
 			},
 			{
-				'000',
-				'111',
 				'100',
+				'111',
+				'000',
 			},
 			{
+				'010',
+				'010',
 				'110',
-				'010',
-				'010',
 			},
 		},
 		kick = main_kick_data,
@@ -163,24 +163,24 @@ local tetrominoes = {
 	s = {
 		blocks = {
 			{
-				'011',
-				'110',
 				'000',
+				'110',
+				'011',
 			},
 			{
-				'010',
-				'011',
 				'001',
-			},
-			{
-				'000',
 				'011',
-				'110',
+				'010',
 			},
 			{
-				'100',
 				'110',
+				'011',
+				'000',
+			},
+			{
 				'010',
+				'110',
+				'100',
 			},
 		},
 		kick = main_kick_data,
@@ -191,24 +191,24 @@ local tetrominoes = {
 	z = {
 		blocks = {
 			{
-				'110',
-				'011',
 				'000',
+				'011',
+				'110',
 			},
 			{
+				'010',
+				'011',
 				'001',
-				'011',
-				'010',
 			},
 			{
+				'011',
+				'110',
 				'000',
-				'110',
-				'011',
 			},
 			{
-				'010',
-				'110',
 				'100',
+				'110',
+				'010',
 			},
 		},
 		kick = main_kick_data,
@@ -219,9 +219,9 @@ local tetrominoes = {
 	t = {
 		blocks = {
 			{
-				'010',
-				'111',
 				'000',
+				'111',
+				'010',
 			},
 			{
 				'010',
@@ -229,9 +229,9 @@ local tetrominoes = {
 				'010',
 			},
 			{
-				'000',
-				'111',
 				'010',
+				'111',
+				'000',
 			},
 			{
 				'010',
@@ -893,11 +893,11 @@ function state.game:rotate(ccw)
 	local dir = ccw and 'ccw' or 'cw'
 	local new_orientation = c.orientation
 	if ccw then
-		new_orientation -= 1
-		if new_orientation < 1 then new_orientation = 4 end
-	else
 		new_orientation += 1
 		if new_orientation > 4 then new_orientation = 1 end
+	else
+		new_orientation -= 1
+		if new_orientation < 1 then new_orientation = 4 end
 	end
 	local tests = tetrominoes[c.shape].kick[c.orientation][dir]
 	for test in all(tests) do
@@ -1217,7 +1217,9 @@ function state.game:draw_tetromino(shape, x, y, orientation, ghost, centered)
 		elseif shape ~= 'i' then
 			x += .5
 		end
+		y -= 1
 		if shape == 'i' then y -= .5 end
+		if shape == 'o' then y += 1 end
 	end
 	orientation = orientation or 1
 	local blocks = tetrominoes[shape].blocks[orientation]
