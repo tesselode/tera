@@ -302,6 +302,11 @@ music_mode = {
 	off = 4,
 }
 
+game_mode = {
+	score_attack = 1,
+	time_attack = 2,
+}
+
 -- constants --
 local board_width = 10
 local board_height = 40
@@ -344,12 +349,12 @@ local function number_to_time(n)
 end
 
 local function draw_fancy_number(number_string, x, y, alternate_palette)
-	local start_sprite = alternate_palette and 96 or 32
+	local start_sprite = alternate_palette and 112 or 32
 	number_string = tostr(number_string)
 	for i = 1, #number_string do
 		local pos = #number_string - (i - 1)
 		local character = sub(number_string, pos, pos)
-		local sprite_offset = character == ':' and 10 or tonum(character)
+		local sprite_offset = character == ':' and 10 or character == '.' and 11 or tonum(character)
 		spr(start_sprite + sprite_offset, x - 5 * i, y)
 	end
 end
@@ -589,6 +594,8 @@ state.game = {
 	lock_delays = {30, 28, 26, 24, 22, 20, 18, 16},
 	point_values = {{3, 6, 10, 15}, {5, 10, 15, 20}},
 	forced_lock_times = {240, 210, 180, 160, 140, 120, 110, 100, 90, 83, 76, 70, 63, 56, 50, 45, 40, 35, 30},
+	time_attack_level_scale = 10,
+	time_attack_base_level_drain = .0001,
 }
 
 function state.game:init_board()
@@ -617,24 +624,29 @@ function state.game:populate_next_queue()
 end
 
 function state.game:get_spawn_delay()
-	return self.level < 13 and 15
-		or self.level < 23 and 15 - (self.level - 12)
+	local level = flr(self.level)
+	return level < 13 and 15
+		or level < 23 and 15 - (level - 12)
 		or 5
 end
 
 function state.game:get_gravity_interval()
-	return self.gravity_intervals[min(self.level, #self.gravity_intervals)]
+	local level = flr(self.level)
+	return self.gravity_intervals[min(level, #self.gravity_intervals)]
 end
 
 function state.game:get_lock_delay()
-	return self.lock_delays[mid(1, self.level - 7, #self.lock_delays)]
+	local level = flr(self.level)
+	return self.lock_delays[mid(1, level - 7, #self.lock_delays)]
 end
 
 function state.game:get_forced_lock_delay()
-	return self.forced_lock_times[mid(1, self.level, #self.forced_lock_times)]
+	local level = flr(self.level)
+	return self.forced_lock_times[mid(1, level, #self.forced_lock_times)]
 end
 
-function state.game:enter(previous)
+function state.game:enter(previous, mode)
+	self.mode = mode or game_mode.time_attack
 	self:init_board()
 	self.next_queue = {}
 	self:populate_next_queue()
@@ -643,9 +655,11 @@ function state.game:enter(previous)
 	self.current_tetromino = nil
 	self.score = 0
 	self.time = 0
-	self.moves = 0
-	self.moves_until_next_level = self.moves_per_level
-	self.level = 1
+	if mode == game_mode.score_attack then
+		self.moves = 0
+		self.moves_until_next_level = self.moves_per_level
+	end
+	self.level = self.mode == game_mode.time_attack and 3 or 1
 	self.spawn_timer = self:get_spawn_delay()
 	self.shift_repeat_timer = -1
 	self.shift_repeat_direction = 0
@@ -764,6 +778,14 @@ function state.game:hold()
 	sfx(sound.hold)
 end
 
+function state.game:increase_score(amount)
+	self.score += amount
+	if self.mode == game_mode.time_attack then
+		self.level += sqrt(amount) / self.time_attack_level_scale
+	end
+	self.score_y_offset = self.score_bounce_amount
+end
+
 function state.game:place_current_tetromino(hard_drop, top_out)
 	local c = self.current_tetromino
 	if not c then return end
@@ -781,15 +803,17 @@ function state.game:place_current_tetromino(hard_drop, top_out)
 		end
 	end
 	if not top_out then
-		self.score += 1
-		self.moves += 1
-		-- level up
-		self.moves_until_next_level -= 1
-		if self.moves_until_next_level == 0 then
-			self.moves_until_next_level = self.moves_per_level
-			self.level += 1
-			add(self.effects, class.level_up_message())
-			sfx(sound.level_up)
+		self:increase_score(1)
+		if self.mode == game_mode.score_attack then
+			self.moves += 1
+			-- level up
+			self.moves_until_next_level -= 1
+			if self.moves_until_next_level == 0 then
+				self.moves_until_next_level = self.moves_per_level
+				self.level += 1
+				add(self.effects, class.level_up_message())
+				sfx(sound.level_up)
+			end
 		end
 	end
 	self:detect_filled_lines()
@@ -798,13 +822,14 @@ function state.game:place_current_tetromino(hard_drop, top_out)
 	self.spawn_timer = self:get_spawn_delay()
 	sfx(hard_drop and sound.hard_drop or sound.soft_drop)
 	self.play_tetromino_sound = true
-	self.score_y_offset = self.score_bounce_amount
 
 	-- level-based unlocks
-	if self.level >= self.skin_change_2 then
-		dset(save_location.unlock_progress, 2)
-	elseif self.level >= self.skin_change_1 then
-		dset(save_location.unlock_progress, 1)
+	if self.mode == game_mode.score_attack then
+		if self.level >= self.skin_change_2 then
+			dset(save_location.unlock_progress, 2)
+		elseif self.level >= self.skin_change_1 then
+			dset(save_location.unlock_progress, 1)
+		end
 	end
 end
 
@@ -959,7 +984,7 @@ function state.game:detect_filled_lines()
 	end
 	if #self.filled_lines > 0 then
 		self.line_clear_animation_timer = class.line_clear_animation.duration
-		self.score += self.point_values[self.is_spun and 2 or 1][#self.filled_lines]
+		self:increase_score(self.point_values[self.is_spun and 2 or 1][#self.filled_lines])
 		self.line_clears[#self.filled_lines] += 1
 		sfx(sound.line_clear[#self.filled_lines])
 		local message_x, message_y = self:board_to_screen(board_width / 2 + 1,
@@ -1074,6 +1099,12 @@ function state.game:update_gameplay()
 	end
 
 	self:update_gravity(btn(3))
+
+	-- time attack level drain
+	if self.mode == game_mode.time_attack then
+		self.level -= self.time_attack_base_level_drain * flr(self.level) ^ 1.5
+		self.level = max(1, self.level)
+	end
 end
 
 function state.game:update_cosmetic()
@@ -1097,41 +1128,43 @@ function state.game:update_cosmetic()
 		self.play_tetromino_sound = false
 	end
 
-	-- music cues
-	if self.music_mode == music_mode.auto then
-		if not self.reached_music_fadeout_1
-				and self.level == self.skin_change_1 - 1
+	if self.mode == game_mode.score_attack then
+		-- music cues
+		if self.music_mode == music_mode.auto then
+			if not self.reached_music_fadeout_1
+					and self.level == self.skin_change_1 - 1
+					and self.moves_until_next_level < self.skin_change_dramatic_pause then
+				music(-1, 4000)
+				self.reached_music_fadeout_1 = true
+			end
+			if not self.reached_music_2 and self.level == self.skin_change_1 then
+				music(song.song_2)
+				self.reached_music_2 = true
+			end
+			if not self.reached_music_fadeout_2
+					and self.level == self.skin_change_2 - 1
+					and self.moves_until_next_level < self.skin_change_dramatic_pause then
+				music(-1, 4000)
+				self.reached_music_fadeout_2 = true
+			end
+			if not self.reached_music_3 and self.level == self.skin_change_2 then
+				music(song.song_3)
+				self.reached_music_3 = true
+			end
+		end
+		-- background wipe transition
+		if (self.level == self.skin_change_1 - 1 or self.level == self.skin_change_2 - 1)
 				and self.moves_until_next_level < self.skin_change_dramatic_pause then
-			music(-1, 4000)
-			self.reached_music_fadeout_1 = true
-		end
-		if not self.reached_music_2 and self.level == self.skin_change_1 then
-			music(song.song_2)
-			self.reached_music_2 = true
-		end
-		if not self.reached_music_fadeout_2
-				and self.level == self.skin_change_2 - 1
-				and self.moves_until_next_level < self.skin_change_dramatic_pause then
-			music(-1, 4000)
-			self.reached_music_fadeout_2 = true
-		end
-		if not self.reached_music_3 and self.level == self.skin_change_2 then
-			music(song.song_3)
-			self.reached_music_3 = true
+			if self.background_wipe_height < 128 then
+				self.background_wipe_height += self.background_wipe_speed
+			end
+		else
+			if self.background_wipe_height > 0 then
+				self.background_wipe_height -= self.background_wipe_speed
+			end
 		end
 	end
 
-	-- background wipe transition
-	if (self.level == self.skin_change_1 - 1 or self.level == self.skin_change_2 - 1)
-			and self.moves_until_next_level < self.skin_change_dramatic_pause then
-		if self.background_wipe_height < 128 then
-			self.background_wipe_height += self.background_wipe_speed
-		end
-	else
-		if self.background_wipe_height > 0 then
-			self.background_wipe_height -= self.background_wipe_speed
-		end
-	end
 
 	-- enter transition
 	if self.enter_transition_progress < 1 then
@@ -1265,7 +1298,13 @@ function state.game:draw_hud()
 	draw_fancy_number(self.score, 27, 44 + self.score_y_offset)
 
 	-- level
-	draw_fancy_number(self.level, 27, 76, true)
+	if self.mode == game_mode.time_attack then
+		local level_string = flr(self.level * 100)
+		level_string = sub(level_string, 1, -3) .. '.' .. sub(level_string, -2, -1)
+		draw_fancy_number(level_string, 27, 76, true)
+	else
+		draw_fancy_number(self.level, 27, 76, true)
+	end
 
 	-- time
 	draw_fancy_number(number_to_time(self.time), 27, 108, true)
@@ -1333,8 +1372,7 @@ function state.game:draw_background()
 		else
 			self:draw_background_1()
 		end
-		if (self.level == self.skin_change_1 - 1 or self.level == self.skin_change_2 - 1)
-				and self.moves_until_next_level < self.skin_change_dramatic_pause then
+		if (self.level == self.skin_change_1 - 1 or self.level == self.skin_change_2 - 1) then
 			rectfill(0, 0, 128, self.background_wipe_height, 0)
 		else
 			rectfill(0, 128 - self.background_wipe_height, 128, 128, 0)
