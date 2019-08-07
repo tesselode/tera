@@ -1,7 +1,7 @@
 pico-8 cartridge // http://www.pico-8.com
 version 16
 __lua__
--- tera: mind over matter
+-- tERA: mIND oVER mATTER
 -- tesselode
 
 #include code.p8
