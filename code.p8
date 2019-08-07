@@ -588,6 +588,7 @@ state.game = {
 	gravity_intervals = {45, 20, 10, 7, 4, 2, 1, .5, .1},
 	lock_delays = {30, 28, 26, 24, 22, 20, 18, 16},
 	point_values = {{3, 6, 10, 15}, {5, 10, 15, 20}},
+	forced_lock_times = {240, 210, 180, 160, 140, 120, 110, 100, 90, 83, 76, 70, 63, 56, 50, 45, 40, 35, 30},
 }
 
 function state.game:init_board()
@@ -629,6 +630,10 @@ function state.game:get_lock_delay()
 	return self.lock_delays[mid(1, self.level - 7, #self.lock_delays)]
 end
 
+function state.game:get_forced_lock_delay()
+	return self.forced_lock_times[mid(1, self.level, #self.forced_lock_times)]
+end
+
 function state.game:enter(previous)
 	self:init_board()
 	self.next_queue = {}
@@ -646,6 +651,7 @@ function state.game:enter(previous)
 	self.shift_repeat_direction = 0
 	self.soft_drop_down_previous = false
 	self.lock_timer = -1
+	self.forced_lock_timer = self:get_forced_lock_delay()
 	self.held = false
 	self.gravity_timer = self:get_gravity_interval()
 	self.shift_buffer = {}
@@ -741,6 +747,7 @@ function state.game:spawn_tetromino(shape)
 	end
 	self.gravity_timer = self:get_gravity_interval()
 	self.lock_timer = -1
+	self.forced_lock_timer = self:get_forced_lock_delay()
 	self.is_spun = false
 end
 
@@ -845,6 +852,12 @@ function state.game:hard_drop()
 end
 
 function state.game:update_gravity(soft_drop)
+	if not self:can_current_tetromino_fit(0, -1) then
+		self.forced_lock_timer -= 1
+		if self.forced_lock_timer <= 0 then
+			self:place_current_tetromino()
+		end
+	end
 	if self.lock_timer ~= -1 then
 		self.lock_timer -= 1
 		if self.lock_timer <= 0 then
